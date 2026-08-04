@@ -1,0 +1,72 @@
+/* 全局样式 - 延续原项目的工业科技蓝主题 */
+:root {
+  --primary: #1A73E8;
+  --primary-light: #4A90E2;
+  --primary-dark: #0D47A1;
+  --secondary: #42A5F5;
+  --accent: #FF6B6B;
+  --success: #27AE60;
+  --warning: #F39C12;
+  --info: #3498DB;
+  --bg: #E8F4FD;
+  --bg-gradient-start: #E3F2FD;
+  --bg-gradient-end: #BBDEFB;
+  --card: #FFFFFF;
+  --border: #90CAF9;
+  --text-primary: #1A237E;
+  --text-secondary: #546E7A;
+  --sidebar-bg: #0B3F73;
+  --sidebar-top: #082F59;
+  --sidebar-text: #DCEEFF;
+  --sidebar-muted: #88B4D8;
+  --sidebar-hover: #155C96;
+  --sidebar-active: #1769AA;
+  --sidebar-indicator: #67D1FF;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  height: 100vh;
+}
+
+/* Element Plus 主题覆盖 */
+.el-menu {
+  border-right: none !important;
+}
+
+.el-card {
+  border-radius: 8px !important;
+  border-color: var(--border) !important;
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--primary);
+  --el-button-border-color: var(--primary);
+}
+
+.el-button--success {
+  --el-button-bg-color: var(--success);
+  --el-button-border-color: var(--success);
+}
+
+.el-button--warning {
+  --el-button-bg-color: var(--warning);
+  --el-button-border-color: var(--warning);
+}
+
+.el-button--danger {
+  --el-button-bg-color: var(--accent);
+  --el-button-border-color: var(--accent);
+}
