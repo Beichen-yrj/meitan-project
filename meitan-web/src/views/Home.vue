@@ -94,7 +94,7 @@ onMounted(async () => {
   background-size: cover;
 }
 .home-carousel-shell {
-  width: min(82%, 1120px);
+  width: min(76%, 1000px);
   margin: 0 auto 22px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.72);
@@ -105,13 +105,14 @@ onMounted(async () => {
   -webkit-backdrop-filter: blur(3px);
 }
 .home-carousel :deep(.el-carousel__container) {
-  height: clamp(320px, 28vw, 440px);
+  height: auto;
+  aspect-ratio: 16 / 9;
 }
 .home-carousel-image {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
 }
 .home-carousel-shell :deep(.el-carousel__indicators--outside) {
@@ -209,10 +210,7 @@ onMounted(async () => {
 }
 @media (max-width: 1100px) {
   .home-carousel-shell {
-    width: 94%;
-  }
-  .home-carousel :deep(.el-carousel__container) {
-    height: clamp(280px, 36vw, 380px);
+    width: 88%;
   }
 }
 </style>
