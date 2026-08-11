@@ -29,7 +29,7 @@ public class CalcController {
         converted.put("vl", toDouble(params.getOrDefault("vl", params.get("Vl")), 25));
         converted.put("pl", toDouble(params.getOrDefault("pl", params.get("Pl")), 2.0));
         converted.put("reference_temp", toDouble(params.getOrDefault("referenceTemp", params.getOrDefault("reference_temp", 25)), 25));
-        converted.put("p_min", toDouble(params.getOrDefault("pMin", params.getOrDefault("p_min", 1)), 1));
+        converted.put("p_min", toDouble(params.getOrDefault("pMin", params.getOrDefault("p_min", 0)), 0));
         converted.put("p_max", toDouble(params.getOrDefault("pMax", params.getOrDefault("p_max", 16)), 16));
         converted.put("p_step", toDouble(params.getOrDefault("pStep", params.getOrDefault("p_step", 0.1)), 0.1));
         converted.put("chart_style", params.getOrDefault("chartStyle", params.getOrDefault("chart_style", "curve")));

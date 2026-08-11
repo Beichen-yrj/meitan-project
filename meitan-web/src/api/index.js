@@ -14,7 +14,7 @@ export const addUserToBlacklist = (id, data) => request.put(`/admin/users/${id}/
 export const removeUserFromBlacklist = (id) => request.delete(`/admin/users/${id}/blacklist`)
 export const getUserLoginLogs = (id, params) => request.get(`/admin/users/${id}/login-logs`, { params })
 
-export const getNews = () => request.get('/public/news')
+export const getNews = () => request.get('/public/news', { silent: true })
 export const calcAnalysis = (data) => calculateAnalysisLocally(data)
 export const calcStatistics = (data) => calculateStatisticsLocally(data)
 export const calcDetection = (data) => calculateDetectionLocally(data)

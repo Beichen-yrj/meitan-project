@@ -10,9 +10,9 @@ const routes = [
     children: [
       { path: 'home', name: 'Home', component: () => import('@/views/Home.vue'), meta: { title: '首页', icon: 'HomeFilled' } },
       { path: 'introduction', name: 'Introduction', component: () => import('@/views/Introduction.vue'), meta: { title: '瓦斯介绍', icon: 'InfoFilled' } },
-      { path: 'analysis', name: 'Analysis', component: () => import('@/views/Analysis.vue'), meta: { title: '瓦斯吸附含量计算与分析', icon: 'TrendCharts' } },
-      { path: 'statistics', name: 'Statistics', component: () => import('@/views/Statistics.vue'), meta: { title: '煤样瓦斯吸附参数统计分析', icon: 'DataAnalysis' } },
-      { path: 'detection', name: 'Detection', component: () => import('@/views/Detection.vue'), meta: { title: '煤层瓦斯突出危险性检测', icon: 'WarningFilled' } },
+      { path: 'analysis', name: 'Analysis', component: () => import('@/views/Analysis.vue'), meta: { title: '瓦斯吸附量计算与分析', icon: 'TrendCharts' } },
+      { path: 'statistics', name: 'Statistics', component: () => import('@/views/Statistics.vue'), meta: { title: '煤层瓦斯吸附参数统计', icon: 'DataAnalysis' } },
+      { path: 'detection', name: 'Detection', component: () => import('@/views/Detection.vue'), meta: { title: '煤层区域突出危险性预测', icon: 'WarningFilled' } },
       { path: 'files', name: 'Files', component: () => import('@/views/Files.vue'), meta: { title: '数据文件管理', icon: 'FolderOpened' } },
       { path: 'reports', name: 'Reports', component: () => import('@/views/Reports.vue'), meta: { title: '瓦斯数据导出与报告', icon: 'Document' } },
       { path: 'feedback', name: 'Feedback', component: () => import('@/views/Feedback.vue'), meta: { title: '用户反馈', icon: 'ChatLineSquare' } },

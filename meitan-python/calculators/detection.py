@@ -1,5 +1,5 @@
-"""板块三：煤层瓦斯突出危险性检测引擎
-从原 ui/detection.py 提取检测计算逻辑
+"""板块三：煤层区域突出危险性预测引擎
+根据瓦斯压力与瓦斯含量双指标进行区域预测
 
 游离瓦斯公式：
     Xy = V × P × T₀ / (T × P₀ × A)
@@ -72,8 +72,8 @@ def evaluate_outburst_risk(params: dict) -> dict:
     if not pressure_danger and not content_danger:
         is_danger = False
         danger_reason = (
-            f'安全：在当前压力范围内，瓦斯压力 < {crit_pressure} MPa，'
-            f'总瓦斯含量 < {crit_content} m³/t，无突出危险性。'
+            f'无突出危险区：瓦斯压力 P < {crit_pressure} MPa，'
+            f'瓦斯含量 W < {crit_content} m³/t。'
         )
     else:
         is_danger = True
@@ -92,7 +92,7 @@ def evaluate_outburst_risk(params: dict) -> dict:
                 f'总瓦斯含量超标：当 P >= {q_start:.2f} MPa 时，'
                 f'含量 >= {crit_content} m³/t'
             )
-        danger_reason = '突出危险：' + '；'.join(messages) + '。请采取防突措施。'
+        danger_reason = '突出危险区：' + '；'.join(messages) + f'。除 P < {crit_pressure} MPa 且 W < {crit_content} m³/t 以外的情况均判为突出危险区。'
 
     # ── 生成图表 ──
     chart_b64 = _generate_risk_chart(p_array, xx_array, Xy, Q,
@@ -150,13 +150,14 @@ def _generate_risk_chart(P, Xx, Xy, Q, crit_pressure, crit_content):
                     arrowprops=dict(arrowstyle='->', color='orange'),
                     fontsize=9, color='orange')
 
-    ax.set_title('总瓦斯含量 Q = Xx + Xy 随压力变化 (双重临界值)',
+    ax.set_title('煤层区域突出危险性预测（P-W 双指标）',
                  fontsize=14, fontweight='bold', color=THEME['primary'])
     ax.set_xlabel('瓦斯压力 P (MPa)', fontsize=12, color=THEME['text_primary'])
     ax.set_ylabel('瓦斯含量 (m³/t)', fontsize=12, color=THEME['text_primary'])
     ax.grid(True, linestyle='--', alpha=0.3, color=THEME['border'])
     ax.legend(loc='best', fontsize=9)
     ax.set_ylim(0, y_max)
+    ax.set_xlim(0, 3)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
 

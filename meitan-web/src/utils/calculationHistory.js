@@ -8,9 +8,9 @@ const RETENTION_DAYS = 60
 const RETENTION_MILLISECONDS = RETENTION_DAYS * 24 * 60 * 60 * 1000
 
 const MODULE_LABELS = {
-  analysis: '瓦斯吸附含量计算与分析',
-  statistics: '煤样瓦斯吸附参数统计分析',
-  detection: '煤层瓦斯突出危险性检测',
+  analysis: '瓦斯吸附量计算与分析',
+  statistics: '煤层瓦斯吸附参数统计',
+  detection: '煤层区域突出危险性预测',
 }
 
 function getCurrentAccountId() {

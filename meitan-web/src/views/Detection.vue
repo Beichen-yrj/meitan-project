@@ -1,6 +1,6 @@
 <template>
   <div class="draft-workbench">
-    <ModulePageHeader title="煤层瓦斯突出危险性检测" />
+    <ModulePageHeader title="煤层区域突出危险性预测" />
 
     <div class="draft-workbench__grid draft-grid--detection">
       <aside class="draft-scroll-column">
@@ -42,17 +42,17 @@
         </section>
 
         <section class="draft-card">
-          <h3 class="draft-card__title">突出危险性判定 (双重临界值)</h3>
+          <h3 class="draft-card__title">区域突出危险性预测临界值</h3>
           <div class="draft-card__body">
             <el-form label-width="165px" label-position="left">
               <el-form-item label="压力临界值 (MPa)：">
-                <el-input-number v-model="params.critPressure" :controls="false" :min="0.01" :step="0.01" />
+                <el-input-number v-model="params.critPressure" :controls="false" :min="0.01" :max="3" :step="0.01" />
                 <span class="draft-muted-text" style="margin-top:5px">标准值：0.74 MPa</span>
               </el-form-item>
-              <el-form-item label="含量临界值选择：">
+              <el-form-item label="区域/含量临界值：">
                 <el-select v-model="critContentPreset">
-                  <el-option label="常规区域 8" :value="8" />
-                  <el-option label="构造带区域 6" :value="6" />
+                  <el-option label="常规区域 W < 8" :value="8" />
+                  <el-option label="构造带区域 W < 6" :value="6" />
                   <el-option label="自定义" value="custom" />
                 </el-select>
               </el-form-item>
@@ -60,6 +60,14 @@
                 <el-input-number v-model="params.critContent" :controls="false" :min="0.01" :step="0.1" />
               </el-form-item>
             </el-form>
+            <el-alert
+              class="prediction-rule-alert"
+              title="区域预测判定规则"
+              :description="`P < ${params.critPressure} MPa 且 W < ${params.critContent} m³/t 时为无突出危险区，其他情况为突出危险区（常规区阈值 8，构造带阈值 6）。`"
+              type="info"
+              :closable="false"
+              show-icon
+            />
           </div>
         </section>
 
@@ -80,7 +88,7 @@
           <div class="draft-card__body">
             <el-button type="success" size="large" :loading="loading" style="width:100%" @click="handleEvaluate">
               <el-icon><Search /></el-icon>
-              计算游离瓦斯及总含量
+              计算总瓦斯含量并预测
             </el-button>
             <el-button type="info" style="width:100%" :disabled="!result" @click="exportResults">
               <el-icon><Upload /></el-icon>
@@ -95,7 +103,7 @@
       </aside>
 
       <section class="draft-card draft-card--fill">
-        <h3 class="draft-card__title">总瓦斯含量 Q = Xx + Xy 曲线</h3>
+        <h3 class="draft-card__title">煤层区域突出危险性预测曲线</h3>
         <div class="draft-toolbar">
           <el-button type="success" :disabled="!chartImage" @click="saveChart">
             <el-icon><Download /></el-icon>
@@ -106,11 +114,11 @@
         </div>
         <div class="draft-chart-stage">
           <div v-if="chartImage" class="draft-chart-image-wrap">
-            <ClickableChartImage :image="chartImage" alt="总瓦斯含量风险曲线" />
+            <ClickableChartImage :image="chartImage" alt="煤层区域突出危险性预测曲线" />
           </div>
           <DraftChartPlaceholder
             v-else
-            title="总瓦斯含量 Q 随压力 P 变化曲线"
+            title="煤层区域突出危险性预测曲线"
             x-label="瓦斯压力 P (MPa)"
             y-label="瓦斯含量 (m³/t)"
             hint="请导入吸附数据并设置参数"
@@ -204,7 +212,7 @@ async function handleEvaluate() {
     return
   }
   loading.value = true
-  statusText.value = '正在计算游离瓦斯及总含量，请稍候...'
+  statusText.value = '正在计算总瓦斯含量并进行区域预测，请稍候...'
   try {
     const res = await calcDetection({
       ...params,
@@ -224,7 +232,7 @@ async function handleEvaluate() {
     const xyArray = res.data.xy_array || []
     const qArray = res.data.q_array || []
     statusText.value = `计算完成 - Xy范围：${Math.min(...xyArray).toFixed(2)}-${Math.max(...xyArray).toFixed(2)} m³/t，Q范围：${Math.min(...qArray).toFixed(2)}-${Math.max(...qArray).toFixed(2)} m³/t`
-    ElMessage.success(res.data.is_danger ? '检测到突出危险性' : '评估完成，结果安全')
+    ElMessage.success(res.data.is_danger ? '预测结果：突出危险区' : '预测结果：无突出危险区')
   } catch (error) {
     statusText.value = '计算失败，请检查吸附数据、参数或计算服务'
   } finally {
@@ -233,7 +241,7 @@ async function handleEvaluate() {
 }
 
 function saveChart() {
-  if (!downloadBase64Png(chartImage.value, `总瓦斯曲线_${timestampForFilename()}.png`)) {
+  if (!downloadBase64Png(chartImage.value, `区域突出危险性预测_${timestampForFilename()}.png`)) {
     ElMessage.warning('没有图表可以保存')
     return
   }
@@ -259,10 +267,16 @@ function exportResults() {
     ['压缩系数A', params.compressFactor],
     ['压力临界值(MPa)', params.critPressure],
     ['含量临界值(m³/t)', params.critContent],
-    ['风险判定', result.value.is_danger ? '危险' : '安全'],
+    ['预测判定', result.value.is_danger ? '突出危险区' : '无突出危险区'],
     ['判定依据', result.value.danger_reason],
   ]), '判定信息')
-  XLSX.writeFile(workbook, `总瓦斯含量_${timestampForFilename()}.xlsx`)
-  statusText.value = '检测结果已导出'
+  XLSX.writeFile(workbook, `区域突出危险性预测_${timestampForFilename()}.xlsx`)
+  statusText.value = '预测结果已导出'
 }
 </script>
+
+<style scoped>
+.prediction-rule-alert {
+  margin-top: 12px;
+}
+</style>

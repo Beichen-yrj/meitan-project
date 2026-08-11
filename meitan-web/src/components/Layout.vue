@@ -9,9 +9,9 @@
         <el-menu-item index="/home"><el-icon><HomeFilled /></el-icon><span>首页</span></el-menu-item>
         <el-menu-item index="/introduction"><el-icon><InfoFilled /></el-icon><span>瓦斯介绍</span></el-menu-item>
         <el-menu-item-group title="瓦斯分析模块" style="color:var(--sidebar-muted)">
-          <el-menu-item index="/analysis"><el-icon><TrendCharts /></el-icon><span>瓦斯吸附含量计算与分析</span></el-menu-item>
-          <el-menu-item index="/statistics"><el-icon><DataAnalysis /></el-icon><span>煤样瓦斯吸附参数统计分析</span></el-menu-item>
-          <el-menu-item index="/detection"><el-icon><WarningFilled /></el-icon><span>煤层瓦斯突出危险性检测</span></el-menu-item>
+          <el-menu-item index="/analysis"><el-icon><TrendCharts /></el-icon><span>瓦斯吸附量计算与分析</span></el-menu-item>
+          <el-menu-item index="/statistics"><el-icon><DataAnalysis /></el-icon><span>煤层瓦斯吸附参数统计</span></el-menu-item>
+          <el-menu-item index="/detection"><el-icon><WarningFilled /></el-icon><span>煤层区域突出危险性预测</span></el-menu-item>
         </el-menu-item-group>
         <el-menu-item index="/files"><el-icon><FolderOpened /></el-icon><span>数据文件管理</span></el-menu-item>
         <el-menu-item index="/reports"><el-icon><Document /></el-icon><span>瓦斯数据导出与报告</span></el-menu-item>

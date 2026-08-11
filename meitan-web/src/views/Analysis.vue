@@ -1,6 +1,6 @@
 <template>
   <div class="draft-workbench">
-    <ModulePageHeader title="瓦斯吸附含量计算与分析" />
+    <ModulePageHeader title="瓦斯吸附量计算与分析" />
 
     <div class="draft-workbench__grid draft-grid--analysis">
       <aside class="draft-scroll-column">
@@ -238,7 +238,7 @@ const params = reactive({
   vl: 0,
   pl: 0,
   referenceTemp: 25,
-  pMin: 1,
+  pMin: 0,
   pMax: 16,
   pStep: 0.1,
   chartStyle: 'curve',
@@ -354,7 +354,7 @@ function clearPlot() {
 
 function resetParams() {
   params.referenceTemp = 25
-  params.pMin = 1
+  params.pMin = 0
   params.pMax = 16
   params.pStep = 0.1
   params.chartStyle = 'curve'
@@ -365,7 +365,7 @@ function resetParams() {
 }
 
 function quickCalculate() {
-  params.pMin = 1
+  params.pMin = 0
   params.pMax = 16
   params.pStep = 0.1
   handleCalculate()

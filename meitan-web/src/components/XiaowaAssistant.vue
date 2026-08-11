@@ -187,9 +187,9 @@ let messageId = 1
 const pageGuides = [
   { path: '/home', shortLabel: '首页', label: '首页', icon: 'HomeFilled' },
   { path: '/introduction', shortLabel: '瓦斯知识', label: '瓦斯介绍', icon: 'InfoFilled' },
-  { path: '/analysis', shortLabel: '吸附计算', label: '瓦斯吸附含量计算与分析', icon: 'TrendCharts' },
-  { path: '/statistics', shortLabel: '参数统计', label: '煤样瓦斯吸附参数统计分析', icon: 'DataAnalysis' },
-  { path: '/detection', shortLabel: '危险检测', label: '煤层瓦斯突出危险性检测', icon: 'WarningFilled' },
+  { path: '/analysis', shortLabel: '吸附计算', label: '瓦斯吸附量计算与分析', icon: 'TrendCharts' },
+  { path: '/statistics', shortLabel: '参数统计', label: '煤层瓦斯吸附参数统计', icon: 'DataAnalysis' },
+  { path: '/detection', shortLabel: '危险预测', label: '煤层区域突出危险性预测', icon: 'WarningFilled' },
   { path: '/files', shortLabel: '数据记录', label: '数据文件管理', icon: 'FolderOpened' },
   { path: '/reports', shortLabel: '导出报告', label: '瓦斯数据导出与报告', icon: 'Document' },
   { path: '/feedback', shortLabel: '用户反馈', label: '用户反馈', icon: 'ChatLineSquare' },

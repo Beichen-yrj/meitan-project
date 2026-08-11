@@ -22,7 +22,7 @@ request.interceptors.response.use(
   (response) => {
     const res = response.data
     if (res.code !== 200) {
-      ElMessage.error(res.message || '请求失败')
+      if (!response.config.silent) ElMessage.error(res.message || '请求失败')
       if (res.code === 401 && !response.config.url.includes('/auth/login')) {
         const userStore = useUserStore()
         userStore.logout()
@@ -40,7 +40,9 @@ request.interceptors.response.use(
       userStore.logout()
       window.location.href = '/login'
     }
-    ElMessage.error(serverMessage || (status === 403 ? '没有权限执行此操作' : error.message) || '网络错误')
+    if (!error.config?.silent) {
+      ElMessage.error(serverMessage || (status === 403 ? '没有权限执行此操作' : error.message) || '网络错误')
+    }
     return Promise.reject(error)
   }
 )

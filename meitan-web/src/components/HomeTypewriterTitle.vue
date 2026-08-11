@@ -4,7 +4,7 @@
       <h1>{{ typedTitle }}</h1>
       <span class="home-title__cursor" aria-hidden="true"></span>
     </div>
-    <p>瓦斯吸附数据分析&nbsp;&nbsp;·&nbsp;&nbsp;参数统计&nbsp;&nbsp;·&nbsp;&nbsp;突出危险性检测</p>
+    <p>瓦斯吸附量计算与分析&nbsp;&nbsp;·&nbsp;&nbsp;煤层瓦斯吸附参数统计&nbsp;&nbsp;·&nbsp;&nbsp;煤层区域突出危险性预测</p>
   </section>
 </template>
 

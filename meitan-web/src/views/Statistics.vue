@@ -1,6 +1,6 @@
 <template>
   <div class="draft-workbench">
-    <ModulePageHeader title="煤样瓦斯吸附参数统计分析" />
+    <ModulePageHeader title="煤层瓦斯吸附参数统计" />
 
     <div class="draft-workbench__grid draft-grid--statistics">
       <aside class="draft-scroll-column">

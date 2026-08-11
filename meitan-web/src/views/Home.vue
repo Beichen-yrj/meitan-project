@@ -60,9 +60,9 @@ import homeBackground from '@/assets/images/7.jpg'
 const carouselImages = [image1, image2, image3, image4, image5, image6]
 
 const navCards = [
-  { title: '瓦斯吸附含量计算', desc: 'Langmuir吸附模型计算与多曲线对比分析', path: '/analysis', icon: 'TrendCharts', color: '#1A73E8' },
-  { title: '参数统计分析', desc: '煤样瓦斯吸附参数的多维度统计图表', path: '/statistics', icon: 'DataAnalysis', color: '#42A5F5' },
-  { title: '突出危险性检测', desc: '双重临界值判定与危险区域标注', path: '/detection', icon: 'WarningFilled', color: '#FF6B6B' },
+  { title: '瓦斯吸附量计算与分析', desc: 'Langmuir吸附模型计算与多曲线对比分析', path: '/analysis', icon: 'TrendCharts', color: '#1A73E8' },
+  { title: '煤层瓦斯吸附参数统计', desc: '煤层瓦斯吸附参数的多维度统计图表', path: '/statistics', icon: 'DataAnalysis', color: '#42A5F5' },
+  { title: '煤层区域突出危险性预测', desc: '依据P-W临界值进行区域危险性预测', path: '/detection', icon: 'WarningFilled', color: '#FF6B6B' },
   { title: '数据文件管理', desc: '上传与管理您的数据文件', path: '/files', icon: 'FolderOpened', color: '#27AE60' },
   { title: '报告导出', desc: '生成XLSX/HTML综合安全评价报告', path: '/reports', icon: 'Document', color: '#F39C12' },
   { title: '用户反馈', desc: '提交使用体验与改进建议', path: '/feedback', icon: 'ChatLineSquare', color: '#3498DB' },

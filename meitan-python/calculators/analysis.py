@@ -1,4 +1,4 @@
-"""板块一：瓦斯吸附含量计算引擎
+"""板块一：瓦斯吸附量计算与分析引擎
 从原 ui/analysis.py 提取纯计算逻辑，适配 HTTP API
 
 Langmuir 吸附公式：
@@ -25,7 +25,7 @@ def calculate_adsorption(params: dict) -> dict:
             "vl": float,             # Langmuir Vl值 (cm³/g or m³/t)
             "pl": float,             # Langmuir Pl值 (MPa)
             "reference_temp": float, # 参考温度 T0 (°C), 默认25
-            "p_min": float,          # 最小压力 (MPa), 默认1
+            "p_min": float,          # 最小压力 (MPa), 默认0
             "p_max": float,          # 最大压力 (MPa), 默认16
             "p_step": float,         # 压力步长 (MPa), 默认0.1
             "chart_style": str,      # curve | scatter | bar | area
@@ -47,7 +47,7 @@ def calculate_adsorption(params: dict) -> dict:
     Vl = float(params.get('vl', 0))
     Pl = float(params.get('pl', 0))
     T0 = float(params.get('reference_temp', 25))
-    P_min = float(params.get('p_min', 1))
+    P_min = float(params.get('p_min', 0))
     P_max = float(params.get('p_max', 16))
     P_step = float(params.get('p_step', 0.1))
     chart_style = params.get('chart_style', 'curve')
@@ -56,6 +56,8 @@ def calculate_adsorption(params: dict) -> dict:
     # ── 参数校验 ──
     if P_min >= P_max:
         raise ValueError("最小压力必须小于最大压力")
+    if P_min < 0:
+        raise ValueError("最小压力不能小于0")
     if P_step <= 0:
         raise ValueError("压力步长必须大于0")
 

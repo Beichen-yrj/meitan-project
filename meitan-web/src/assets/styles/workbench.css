@@ -1,21 +1,25 @@
 .draft-workbench {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 90px);
-  min-height: 720px;
+  height: 100%;
+  min-height: 0;
   color: var(--text-primary);
   overflow: hidden;
 }
 
 .draft-page-bar {
-  flex: 0 0 54px;
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 24px;
-  margin: -20px -20px 14px;
+  min-height: 54px;
+  margin: 0 0 14px;
   padding: 7px 20px;
   background: #fff;
   border-bottom: 1px solid #d7e8f6;
+  box-sizing: border-box;
 }
 
 .draft-page-bar__back {
@@ -39,6 +43,7 @@
   display: grid;
   gap: 14px;
   min-height: 0;
+  position: relative;
   overflow-x: auto;
   overflow-y: hidden;
 }
@@ -256,10 +261,6 @@
 }
 
 @media (max-height: 820px) {
-  .draft-workbench {
-    min-height: 650px;
-  }
-
   .draft-card__body {
     padding-top: 12px;
     padding-bottom: 12px;

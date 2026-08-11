@@ -111,9 +111,9 @@ const history = ref([])
 let removeHistoryListener = () => {}
 
 const modules = [
-  { type: 'analysis', label: '瓦斯吸附含量计算', icon: 'TrendCharts' },
-  { type: 'statistics', label: '煤样瓦斯参数统计', icon: 'DataAnalysis' },
-  { type: 'detection', label: '突出危险性检测', icon: 'WarningFilled' },
+  { type: 'analysis', label: '瓦斯吸附量计算与分析', icon: 'TrendCharts' },
+  { type: 'statistics', label: '煤层瓦斯吸附参数统计', icon: 'DataAnalysis' },
+  { type: 'detection', label: '煤层区域突出危险性预测', icon: 'WarningFilled' },
 ]
 
 const latestRecord = computed(() => history.value[0] || null)

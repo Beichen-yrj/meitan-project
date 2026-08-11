@@ -59,7 +59,7 @@ function chartToBase64(option, width = 1200, height = 720) {
 function createPressureValues(minimum, maximum, step) {
   if (!(minimum < maximum)) throw new Error('最小压力必须小于最大压力')
   if (!(step > 0)) throw new Error('压力步长必须大于 0')
-  if (minimum <= 0) throw new Error('最小压力必须大于 0')
+  if (minimum < 0) throw new Error('最小压力不能小于 0')
   if ((maximum - minimum) / step > 10000) throw new Error('压力步长过小，生成的数据点超过限制')
 
   const values = []
@@ -77,7 +77,7 @@ export async function calculateAnalysisLocally(params) {
   const vl = finiteNumber(params.vl ?? params.Vl)
   const pl = finiteNumber(params.pl ?? params.Pl)
   const referenceTemp = finiteNumber(params.referenceTemp ?? params.reference_temp, 25)
-  const pMin = finiteNumber(params.pMin ?? params.p_min, 1)
+  const pMin = finiteNumber(params.pMin ?? params.p_min, 0)
   const pMax = finiteNumber(params.pMax ?? params.p_max, 16)
   const pStep = finiteNumber(params.pStep ?? params.p_step, 0.1)
   const chartStyle = params.chartStyle || params.chart_style || 'curve'
@@ -86,7 +86,7 @@ export async function calculateAnalysisLocally(params) {
 
   const alpha = Math.exp(-(-5.079e-4 * volatile ** 2 + 0.028 * volatile - 0.015) * waterContent)
   const vmArray = pArray.map((pressure) => {
-    if (pl + pressure === 0) return 0
+    if (pressure === 0 || pl + pressure === 0) return 0
     const lambda = Math.exp(-0.009 * pressure ** -0.286 * (temperature - referenceTemp))
     return round((vl * pressure) / (pl + pressure) * alpha * lambda, 6)
   })
@@ -130,6 +130,7 @@ export async function calculateAnalysisLocally(params) {
     xAxis: {
       type: 'value',
       name: '气体压力 P (MPa)',
+      min: 0,
       nameLocation: 'middle',
       nameGap: 42,
       splitLine: { lineStyle: { type: 'dashed', color: '#d8e8f8' } },
@@ -359,13 +360,13 @@ export async function calculateDetectionLocally(params) {
   if (pressureIndex >= 0) reasons.push(`瓦斯压力超标：当 P ≥ ${pArray[pressureIndex].toFixed(2)} MPa 时，压力 ≥ ${critPressure} MPa`)
   if (contentIndex >= 0) reasons.push(`总瓦斯含量超标：当 P ≥ ${pArray[contentIndex].toFixed(2)} MPa 时，含量 ≥ ${critContent} m³/t`)
   const dangerReason = isDanger
-    ? `突出危险：${reasons.join('；')}。请采取防突措施。`
-    : `安全：在当前压力范围内，瓦斯压力 < ${critPressure} MPa，总瓦斯含量 < ${critContent} m³/t，无突出危险性。`
+    ? `突出危险区：${reasons.join('；')}。除 P < ${critPressure} MPa 且 W < ${critContent} m³/t 以外的情况均判为突出危险区。`
+    : `无突出危险区：瓦斯压力 P < ${critPressure} MPa，瓦斯含量 W < ${critContent} m³/t。`
 
   const chartImage = chartToBase64({
-    title: { text: '总瓦斯含量 Q = Xx + Xy 随压力变化（双重临界值）', left: 'center', textStyle: { color: THEME.primary } },
+    title: { text: '煤层区域突出危险性预测（P-W 双指标）', left: 'center', textStyle: { color: THEME.primary } },
     legend: { top: 42 },
-    xAxis: { type: 'value', name: '瓦斯压力 P (MPa)', nameLocation: 'middle', nameGap: 42 },
+    xAxis: { type: 'value', name: '瓦斯压力 P (MPa)', nameLocation: 'middle', nameGap: 42, min: 0, max: 3 },
     yAxis: { type: 'value', name: '瓦斯含量 (m³/t)', nameLocation: 'middle', nameGap: 58, min: 0 },
     series: [
       { name: '吸附瓦斯 Xx', type: 'line', data: pArray.map((pressure, index) => [pressure, xxArray[index]]), lineStyle: { type: 'dashed', color: THEME.secondary, width: 2 }, showSymbol: false },
@@ -376,6 +377,15 @@ export async function calculateDetectionLocally(params) {
         data: pArray.map((pressure, index) => [pressure, qArray[index]]),
         lineStyle: { color: THEME.accent, width: 3 },
         showSymbol: false,
+        markArea: {
+          silent: true,
+          itemStyle: { color: 'rgba(39,174,96,.12)' },
+          label: { color: '#218739', formatter: '无突出危险区' },
+          data: [[
+            { xAxis: 0, yAxis: 0 },
+            { xAxis: critPressure, yAxis: critContent },
+          ]],
+        },
         markLine: {
           symbol: 'none',
           data: [
