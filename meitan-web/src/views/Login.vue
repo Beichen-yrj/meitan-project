@@ -71,6 +71,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { getNews, register as registerApi } from '@/api'
+import { applyNewsUrls, DEFAULT_NEWS } from '@/utils/news'
 import { ElMessage } from 'element-plus'
 import loginBackground from '@/assets/images/7.jpg'
 
@@ -89,12 +90,9 @@ const rules = {
 onMounted(async () => {
   try {
     const res = await getNews()
-    newsList.value = res.data || []
+    newsList.value = applyNewsUrls(res.data || [])
   } catch (e) {
-    newsList.value = [
-      { id: 1, title: '国家矿山安全监察局：加强煤矿瓦斯防治工作', source: '政策法规', url: '#' },
-      { id: 2, title: '智能化瓦斯监测预警系统在多个矿区推广应用', source: '科技前沿', url: '#' },
-    ]
+    newsList.value = DEFAULT_NEWS
   }
 })
 

@@ -48,6 +48,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getNews } from '@/api'
+import { applyNewsUrls, DEFAULT_NEWS } from '@/utils/news'
 import HomeTypewriterTitle from '@/components/HomeTypewriterTitle.vue'
 import image1 from '@/assets/images/1.jpg'
 import image2 from '@/assets/images/2.jpg'
@@ -73,13 +74,10 @@ const newsList = ref([])
 onMounted(async () => {
   try {
     const res = await getNews()
-    newsList.value = res.data || []
+    newsList.value = applyNewsUrls(res.data || [])
   } catch (e) {
     // 默认新闻
-    newsList.value = [
-      { id: 1, title: '国家矿山安全监察局：加强煤矿瓦斯防治工作', source: '政策法规', url: '#' },
-      { id: 2, title: '智能化瓦斯监测预警系统在多个矿区推广应用', source: '科技前沿', url: '#' },
-    ]
+    newsList.value = DEFAULT_NEWS
   }
 })
 </script>

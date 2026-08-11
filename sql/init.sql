@@ -208,12 +208,12 @@ CREATE TABLE IF NOT EXISTS sys_login_log (
 -- 初始数据
 -- ----------------------------
 INSERT INTO news (title, url, source, sort_order) VALUES
-('国家矿山安全监察局：加强煤矿瓦斯防治工作', 'https://www.gov.cn/', '国家矿山安全监察局', 1),
-('2024年全国煤矿瓦斯抽采利用率稳步提升', 'https://www.chinamine-safety.gov.cn/', '国家矿山安全监察局', 2),
-('深部煤层瓦斯抽采技术取得新突破', 'https://www.chinamine-safety.gov.cn/', '行业动态', 3),
-('煤矿瓦斯综合治理方案优化研究进展', 'https://www.gov.cn/', '行业动态', 4),
-('智能化瓦斯监测预警系统在多个矿区推广应用', 'https://www.chinamine-safety.gov.cn/', '科技前沿', 5),
-('煤层气开发利用十四五规划发布', 'https://www.gov.cn/', '政策法规', 6);
+('国家矿山安全监察局：加强煤矿瓦斯防治工作', 'https://www.chinamine-safety.gov.cn/zfxxgk/fdzdgknr/tzgg/202605/t20260524_604733.shtml', '国家矿山安全监察局', 1),
+('2024年全国煤矿瓦斯抽采利用率稳步提升', 'https://mp.weixin.qq.com/s/1kFBskZki1rZdsHIClnh5g', '国家矿山安全监察局', 2),
+('深部煤层瓦斯抽采技术取得新突破', 'https://paper.people.com.cn/zgnyb/pc/content/202502/17/content_30058300.html', '行业动态', 3),
+('煤矿瓦斯综合治理方案优化研究进展', 'https://www.bijie.gov.cn/bm/bjsnyj/dt/bmdt/202608/t20260805_90698536.html', '行业动态', 4),
+('智能化瓦斯监测预警系统在多个矿区推广应用', 'http://dsj.guizhou.gov.cn/ztzl/rdzt/jdal/202507/t20250709_88261060.html', '科技前沿', 5),
+('煤层气开发利用十四五规划发布', 'https://zrzyt.shanxi.gov.cn/mobile/zwgk/ghjh/202407/t20240710_9607008.shtml', '政策法规', 6);
 
 -- 默认管理员账号: admin / admin123（密码为明文，首次登录自动加密为BCrypt）
 INSERT INTO sys_user (username, password, real_name, role, status) VALUES
