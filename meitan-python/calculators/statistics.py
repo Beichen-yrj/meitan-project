@@ -119,8 +119,15 @@ def _generate_scatter(data, x_param, y_param, color_param, size_param,
 
     # 颜色编码
     try:
-        color_vals = pd.to_numeric(data[color_param], errors='coerce')
-        is_numeric_color = color_vals.notna().any()
+        color_source = data[color_param]
+        color_vals = pd.to_numeric(color_source, errors='coerce')
+        populated_mask = color_source.notna() & color_source.astype(str).str.strip().ne('')
+        categorical_fields = {'检索地区', '煤矿', '煤层', '煤种'}
+        is_numeric_color = (
+            color_param not in categorical_fields
+            and populated_mask.any()
+            and color_vals[populated_mask].notna().all()
+        )
     except Exception:
         is_numeric_color = False
 

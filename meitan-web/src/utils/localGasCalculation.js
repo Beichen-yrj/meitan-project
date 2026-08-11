@@ -174,8 +174,15 @@ function rowsFromFileData(fileData) {
 }
 
 function numericValue(row, key) {
-  const value = Number(row[key])
+  const rawValue = row[key]
+  if (rawValue === null || rawValue === undefined || String(rawValue).trim() === '') return NaN
+  const value = Number(rawValue)
   return Number.isFinite(value) ? value : NaN
+}
+
+function categoryValue(value) {
+  const text = String(value ?? '').trim()
+  return text || '未知'
 }
 
 function filterStatisticsRows(rows, params) {
@@ -196,7 +203,13 @@ function statisticsScatterOption(rows, params) {
   const xValues = rows.map((row) => numericValue(row, xKey))
   const numericX = xValues.some(Number.isFinite)
   const colorValues = rows.map((row) => numericValue(row, colorKey))
-  const numericColor = colorValues.some(Number.isFinite)
+  const categoricalFields = new Set(['检索地区', '煤矿', '煤层', '煤种'])
+  const populatedColorValues = rows
+    .map((row) => row[colorKey])
+    .filter((value) => value !== null && value !== undefined && String(value).trim() !== '')
+  const numericColor = !categoricalFields.has(colorKey)
+    && populatedColorValues.length > 0
+    && populatedColorValues.every((value) => Number.isFinite(Number(value)))
   const sizeValues = rows.map((row) => numericValue(row, sizeKey)).filter(Number.isFinite)
   const sizeMin = sizeValues.length ? Math.min(...sizeValues) : 0
   const sizeMax = sizeValues.length ? Math.max(...sizeValues) : 1
@@ -230,7 +243,7 @@ function statisticsScatterOption(rows, params) {
   } else {
     const groups = new Map()
     rows.forEach((row, index) => {
-      const category = String(row[colorKey] ?? '未知')
+      const category = categoryValue(row[colorKey])
       if (!groups.has(category)) groups.set(category, [])
       groups.get(category).push(point(row, index))
     })
