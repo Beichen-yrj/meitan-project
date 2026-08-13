@@ -150,16 +150,21 @@ function displayValue(value) {
   return String(value)
 }
 
+function displayParameterValue(key, value) {
+  if (key === 'regionFilter' && Array.isArray(value)) return value.length ? value.join('、') : '全部地区'
+  return displayValue(value)
+}
+
 const parameterRows = computed(() => Object.entries(selectedRecord.value?.params || {}).map(([key, value]) => ({
   label: parameterLabels[key] || key,
-  value: displayValue(value),
+  value: displayParameterValue(key, value),
 })))
 
 const parameterLabels = {
-  coalType: '煤型及编号', volatile: '挥发分 (%)', temperature: '温度 (°C)', waterContent: '含水率 (%)',
-  vl: 'Vl值', pl: 'Pl值', referenceTemp: '参考温度 (°C)', pMin: '最小压力 (MPa)', pMax: '最大压力 (MPa)', pStep: '压力步长 (MPa)',
+  coalType: '煤样编号', volatile: '挥发分 (%)', temperature: '温度 (°C)', waterContent: '含水率 (%)',
+  vl: 'Vl值', pl: 'Pl值', pMin: '最小压力 (MPa)', pMax: '最大压力 (MPa)', pStep: '压力步长 (MPa)',
   chartType: '图表类型', xAxis: 'X轴', yAxis: 'Y轴', colorBy: '颜色编码', sizeBy: '大小编码', regionFilter: '地区筛选', volatileFilter: '挥发分筛选',
-  volume: '孔隙容积 V', compressFactor: '压缩系数 A', critPressure: '压力临界值', critContent: '含量临界值',
+  volume: '孔隙容积', compressFactor: '压缩系数', measuredPressure: '实测压力值', measuredContent: '实测瓦斯含量值（旧记录）', calculatedContent: '曲线计算瓦斯含量', critContent: '瓦斯含量临界值',
 }
 
 const detailColumns = computed(() => {
@@ -219,7 +224,7 @@ function exportRecord(record) {
     ['计算时间', record.displayTime],
     ['数据来源', record.sourceName],
     ['结果摘要', record.summary],
-    ...Object.entries(record.params || {}).map(([key, value]) => [parameterLabels[key] || key, displayValue(value)]),
+    ...Object.entries(record.params || {}).map(([key, value]) => [parameterLabels[key] || key, displayParameterValue(key, value)]),
   ]), '记录信息')
   if (detailRows.value.length) XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(detailRows.value), '计算结果')
   XLSX.writeFile(workbook, `${shortModuleLabel(record.moduleType)}_${timestampForFilename()}.xlsx`)

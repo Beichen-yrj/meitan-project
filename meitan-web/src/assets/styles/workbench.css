@@ -124,6 +124,17 @@
   word-break: break-all;
 }
 
+.draft-file-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(112px, 0.72fr);
+  gap: 10px;
+}
+
+.draft-file-actions .el-upload,
+.draft-file-actions .el-button {
+  width: 100%;
+}
+
 .draft-toolbar {
   flex: 0 0 auto;
   display: flex;

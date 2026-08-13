@@ -6,18 +6,19 @@
       <aside class="draft-scroll-column">
         <section class="draft-card">
           <div class="draft-card__body">
-            <el-upload
-              style="width:100%"
-              :auto-upload="false"
-              :show-file-list="false"
-              accept=".xlsx,.xls,.csv"
-              :on-change="handleAdsorptionFileChange"
-            >
-              <el-button type="primary" size="large" style="width:100%">
-                <el-icon><FolderOpened /></el-icon>
-                导入吸附数据 (Xx)
-              </el-button>
-            </el-upload>
+            <div class="draft-file-actions">
+              <el-upload
+                :auto-upload="false"
+                :show-file-list="false"
+                accept=".xlsx,.xls,.csv"
+                :on-change="handleAdsorptionFileChange"
+              >
+                <el-button type="primary" size="large">
+                  <el-icon><FolderOpened /></el-icon>
+                  导入吸附数据
+                </el-button>
+              </el-upload>
+            </div>
             <div class="draft-file-name">{{ currentFile ? `已加载：${currentFile}` : '未加载吸附数据' }}</div>
             <div v-if="dataInfo" class="draft-muted-text" style="margin-top:6px">{{ dataInfo }}</div>
           </div>
@@ -27,13 +28,13 @@
           <h3 class="draft-card__title">游离瓦斯计算参数</h3>
           <div class="draft-card__body">
             <el-form label-width="165px" label-position="left">
-              <el-form-item label="孔隙容积 V (m³/t)：">
+              <el-form-item label="孔隙容积 (m³/t)：">
                 <el-input-number v-model="params.volume" :controls="false" :min="0.0001" :step="0.01" />
               </el-form-item>
-              <el-form-item label="温度 t (°C)：">
+              <el-form-item label="温度 (°C)：">
                 <el-input-number v-model="params.temperature" :controls="false" :min="-20" :max="100" />
               </el-form-item>
-              <el-form-item label="压缩系数 A：">
+              <el-form-item label="压缩系数：">
                 <el-input-number v-model="params.compressFactor" :controls="false" :min="0.1" :step="0.1" />
               </el-form-item>
             </el-form>
@@ -45,13 +46,15 @@
           <h3 class="draft-card__title">区域突出危险性预测临界值</h3>
           <div class="draft-card__body">
             <el-form label-width="165px" label-position="left">
-              <el-form-item label="压力临界值 (MPa)：">
-                <el-input-number v-model="params.critPressure" :controls="false" :min="0.01" :max="3" :step="0.01" />
-                <span class="draft-muted-text" style="margin-top:5px">标准值：0.74 MPa</span>
+              <el-form-item label="实测压力值 (MPa)：">
+                <el-input-number v-model="params.measuredPressure" :controls="false" :min="measuredPressureMin" :max="measuredPressureMax" :step="0.01" placeholder="请输入实测压力值" />
               </el-form-item>
-              <el-form-item label="区域/含量临界值：">
+              <el-form-item label="曲线计算瓦斯含量：">
+                <el-input :model-value="calculatedContentDisplay" readonly />
+              </el-form-item>
+              <el-form-item label="瓦斯含量临界值：">
                 <el-select v-model="critContentPreset">
-                  <el-option label="常规区域 W < 8" :value="8" />
+                  <el-option label="一般区域 W < 8" :value="8" />
                   <el-option label="构造带区域 W < 6" :value="6" />
                   <el-option label="自定义" value="custom" />
                 </el-select>
@@ -60,25 +63,19 @@
                 <el-input-number v-model="params.critContent" :controls="false" :min="0.01" :step="0.1" />
               </el-form-item>
             </el-form>
-            <el-alert
-              class="prediction-rule-alert"
-              title="区域预测判定规则"
-              :description="`P < ${params.critPressure} MPa 且 W < ${params.critContent} m³/t 时为无突出危险区，其他情况为突出危险区（常规区阈值 8，构造带阈值 6）。`"
-              type="info"
-              :closable="false"
-              show-icon
-            />
           </div>
         </section>
 
         <section class="draft-card">
-          <h3 class="draft-card__title">评估结果</h3>
+          <h3 class="draft-card__title">评估参考与结果</h3>
           <div class="draft-card__body">
+            <img class="prediction-reference-image" src="/images/区域预测临界值图1.jpg" alt="图1 区域预测临界值" />
             <div
+              v-if="result"
               class="draft-result-message"
-              :class="result ? (result.is_danger ? 'is-danger' : 'is-safe') : ''"
+              :class="result.is_danger ? 'is-danger' : 'is-safe'"
             >
-              {{ result ? `${result.is_danger ? '⚠️' : '✅'} ${result.danger_reason}` : '等待计算...' }}
+              {{ result.danger_reason }}
             </div>
           </div>
         </section>
@@ -158,7 +155,7 @@ const params = reactive({
   volume: 0.05,
   temperature: 25,
   compressFactor: 1.0,
-  critPressure: 0.74,
+  measuredPressure: null,
   critContent: 8.0,
 })
 
@@ -167,6 +164,13 @@ watch(critContentPreset, (value) => {
 })
 
 const chartPointCount = computed(() => result.value?.p_array?.length || 0)
+const measuredPressureMin = computed(() => adsorptionData.value ? Math.min(...adsorptionData.value.pArray) : 0)
+const measuredPressureMax = computed(() => adsorptionData.value ? Math.max(...adsorptionData.value.pArray) : 10)
+const calculatedContentDisplay = computed(() => (
+  Number.isFinite(result.value?.calculated_content)
+    ? `${result.value.calculated_content} m³/t`
+    : '计算后自动生成'
+))
 
 const dataInfo = computed(() => {
   if (!adsorptionData.value) return ''
@@ -188,6 +192,9 @@ const resultRows = computed(() => {
 async function loadAdsorptionFile(file) {
   try {
     adsorptionData.value = parseDetectionWorkbook(await file.arrayBuffer())
+    if (Number.isFinite(params.measuredPressure) && (params.measuredPressure < measuredPressureMin.value || params.measuredPressure > measuredPressureMax.value)) {
+      params.measuredPressure = null
+    }
     currentFile.value = file.name
     chartImage.value = ''
     result.value = null
@@ -207,8 +214,12 @@ async function handleEvaluate() {
     ElMessage.warning('请先导入吸附数据')
     return
   }
-  if (params.volume <= 0 || params.compressFactor <= 0 || params.critPressure <= 0 || params.critContent <= 0) {
+  if (params.volume <= 0 || params.compressFactor <= 0 || params.critContent <= 0) {
     ElMessage.warning('计算参数和临界值必须大于 0')
+    return
+  }
+  if (!Number.isFinite(params.measuredPressure)) {
+    ElMessage.warning('请输入实测压力值')
     return
   }
   loading.value = true
@@ -223,7 +234,7 @@ async function handleEvaluate() {
     saveCalculationRecord({
       moduleType: 'detection',
       sourceName: currentFile.value || '吸附数据',
-      params: { ...params },
+      params: { ...params, calculatedContent: res.data.calculated_content },
       result: res.data,
       chartImage: chartImage.value,
       inputData: adsorptionData.value,
@@ -234,7 +245,8 @@ async function handleEvaluate() {
     statusText.value = `计算完成 - Xy范围：${Math.min(...xyArray).toFixed(2)}-${Math.max(...xyArray).toFixed(2)} m³/t，Q范围：${Math.min(...qArray).toFixed(2)}-${Math.max(...qArray).toFixed(2)} m³/t`
     ElMessage.success(res.data.is_danger ? '预测结果：突出危险区' : '预测结果：无突出危险区')
   } catch (error) {
-    statusText.value = '计算失败，请检查吸附数据、参数或计算服务'
+    statusText.value = error.message || '计算失败，请检查吸附数据和参数'
+    ElMessage.error(statusText.value)
   } finally {
     loading.value = false
   }
@@ -262,11 +274,13 @@ function exportResults() {
   }))), '检测结果')
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([
     ['参数', '值'],
-    ['孔隙容积V(m³/t)', params.volume],
-    ['温度t(°C)', params.temperature],
-    ['压缩系数A', params.compressFactor],
-    ['压力临界值(MPa)', params.critPressure],
-    ['含量临界值(m³/t)', params.critContent],
+    ['孔隙容积(m³/t)', params.volume],
+    ['温度(°C)', params.temperature],
+    ['压缩系数', params.compressFactor],
+    ['实测压力值(MPa)', params.measuredPressure],
+    ['压力标准值(MPa)', 0.74],
+    ['曲线计算瓦斯含量(m³/t)', result.value.calculated_content],
+    ['瓦斯含量临界值(m³/t)', params.critContent],
     ['预测判定', result.value.is_danger ? '突出危险区' : '无突出危险区'],
     ['判定依据', result.value.danger_reason],
   ]), '判定信息')
@@ -276,7 +290,11 @@ function exportResults() {
 </script>
 
 <style scoped>
-.prediction-rule-alert {
-  margin-top: 12px;
+.prediction-reference-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: 12px;
+  border: 1px solid #d8e8f4;
 }
 </style>

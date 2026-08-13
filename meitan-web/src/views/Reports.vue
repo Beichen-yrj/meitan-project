@@ -58,14 +58,15 @@
             </template>
             <template v-else-if="module.type === 'statistics'">
               <span>数据文件：<b>{{ latestByModule.statistics.sourceName || '-' }}</b></span>
-              <span>地区筛选：<b>{{ latestByModule.statistics.params?.regionFilter || '全部' }}</b></span>
+              <span>地区筛选：<b>{{ statisticsRegionLabel(latestByModule.statistics.params?.regionFilter) }}</b></span>
               <span>图表类型：<b>{{ chartTypeLabel(latestByModule.statistics.params?.chartType) }}</b></span>
               <span>统计摘要：<b>{{ latestByModule.statistics.summary || '-' }}</b></span>
             </template>
             <template v-else>
               <span>数据文件：<b>{{ latestByModule.detection.sourceName || '-' }}</b></span>
-              <span>临界压力：<b>{{ latestByModule.detection.params?.critPressure ?? '-' }} MPa</b></span>
-              <span>临界含量：<b>{{ latestByModule.detection.params?.critContent ?? '-' }} m³/t</b></span>
+              <span>实测压力：<b>{{ latestByModule.detection.params?.measuredPressure ?? '-' }} MPa</b></span>
+              <span>曲线计算瓦斯含量：<b>{{ detectionCalculatedContent(latestByModule.detection) }} m³/t</b></span>
+              <span>瓦斯含量临界值：<b>{{ latestByModule.detection.params?.critContent ?? '-' }} m³/t</b></span>
               <span>检测结果：<b :class="latestByModule.detection.result?.is_danger ? 'is-danger' : 'is-safe'">{{ latestByModule.detection.result?.is_danger ? '存在突出危险' : '未检测到突出危险' }}</b></span>
             </template>
           </div>
@@ -120,6 +121,8 @@ const latestRecord = computed(() => history.value[0] || null)
 const latestByModule = reactive({ analysis: null, statistics: null, detection: null })
 const moduleColor = (moduleType) => ({ analysis: 'primary', statistics: 'success', detection: 'warning' }[moduleType] || 'info')
 const shortModuleLabel = (moduleType) => ({ analysis: '吸附分析', statistics: '统计分析', detection: '危险检测' }[moduleType] || moduleType)
+const detectionCalculatedContent = (record) => record?.result?.calculated_content ?? record?.result?.measured_content ?? record?.params?.calculatedContent ?? record?.params?.measuredContent ?? '-'
+const statisticsRegionLabel = (value) => Array.isArray(value) ? (value.length ? value.join('、') : '全部地区') : (value || '全部地区')
 const chartTypeLabel = (type) => ({ scatter: '散点图', dual_axis: '双坐标轴图', grouped: '分组图' }[type] || type || '-')
 
 function refreshHistory() {

@@ -76,7 +76,7 @@ export async function calculateAnalysisLocally(params) {
   const waterContent = finiteNumber(params.waterContent ?? params.water_content)
   const vl = finiteNumber(params.vl ?? params.Vl)
   const pl = finiteNumber(params.pl ?? params.Pl)
-  const referenceTemp = finiteNumber(params.referenceTemp ?? params.reference_temp, 25)
+  const referenceTemp = 25
   const pMin = finiteNumber(params.pMin ?? params.p_min, 0)
   const pMax = finiteNumber(params.pMax ?? params.p_max, 16)
   const pStep = finiteNumber(params.pStep ?? params.p_step, 0.1)
@@ -114,7 +114,7 @@ export async function calculateAnalysisLocally(params) {
     Object.assign(mainSeries, {
       type: 'line',
       smooth: true,
-      showSymbol: pArray.length <= 20,
+      showSymbol: false,
       areaStyle: chartStyle === 'area' ? { color: 'rgba(26,115,232,.25)' } : undefined,
     })
   }
@@ -126,7 +126,7 @@ export async function calculateAnalysisLocally(params) {
       left: 'center',
       textStyle: { color: THEME.primary, fontSize: 21 },
     },
-    legend: { top: 55, type: 'scroll' },
+    legend: { top: 55, type: 'scroll', icon: 'path://M0,5 L40,5', itemWidth: 40, itemHeight: 10 },
     xAxis: {
       type: 'value',
       name: '气体压力 P (MPa)',
@@ -186,10 +186,15 @@ function categoryValue(value) {
 }
 
 function filterStatisticsRows(rows, params) {
-  const region = params.regionFilter ?? params.region_filter ?? '全部'
+  const regionValue = params.regionFilter ?? params.region_filter ?? []
+  const regions = Array.isArray(regionValue)
+    ? regionValue.map(String)
+    : regionValue === '全部' || regionValue === ''
+      ? []
+      : [String(regionValue)]
   const volatile = params.volatileFilter ?? params.volatile_filter ?? '全部'
   return rows.filter((row) => {
-    const regionMatches = region === '全部' || String(row['检索地区'] ?? '未知') === String(region)
+    const regionMatches = regions.length === 0 || regions.includes(String(row['检索地区'] ?? '未知'))
     const volatileMatches = volatile === '全部' || numericValue(row, '挥发分') === Number(volatile)
     return regionMatches && volatileMatches
   })
@@ -198,22 +203,25 @@ function filterStatisticsRows(rows, params) {
 function statisticsScatterOption(rows, params) {
   const xKey = params.xAxis || params.x_axis || '挥发分'
   const yKey = params.yAxis || params.y_axis || 'VL值'
-  const colorKey = params.colorBy || params.color_by || '检索地区'
-  const sizeKey = params.sizeBy || params.size_by || '挥发分'
+  const colorKey = params.colorBy || params.color_by || '无'
+  const sizeKey = params.sizeBy || params.size_by || '无'
+  const useColorEncoding = colorKey !== '无'
+  const useSizeEncoding = sizeKey !== '无'
   const xValues = rows.map((row) => numericValue(row, xKey))
   const numericX = xValues.some(Number.isFinite)
-  const colorValues = rows.map((row) => numericValue(row, colorKey))
+  const colorValues = rows.map((row) => useColorEncoding ? numericValue(row, colorKey) : NaN)
   const categoricalFields = new Set(['检索地区', '煤矿', '煤层', '煤种'])
   const populatedColorValues = rows
     .map((row) => row[colorKey])
     .filter((value) => value !== null && value !== undefined && String(value).trim() !== '')
-  const numericColor = !categoricalFields.has(colorKey)
+  const numericColor = useColorEncoding && !categoricalFields.has(colorKey)
     && populatedColorValues.length > 0
     && populatedColorValues.every((value) => Number.isFinite(Number(value)))
-  const sizeValues = rows.map((row) => numericValue(row, sizeKey)).filter(Number.isFinite)
+  const sizeValues = useSizeEncoding ? rows.map((row) => numericValue(row, sizeKey)).filter(Number.isFinite) : []
   const sizeMin = sizeValues.length ? Math.min(...sizeValues) : 0
   const sizeMax = sizeValues.length ? Math.max(...sizeValues) : 1
   const symbolSize = (value) => {
+    if (!useSizeEncoding) return 13
     const raw = Number(value?.[3])
     if (!Number.isFinite(raw) || sizeMax === sizeMin) return 13
     return 8 + (raw - sizeMin) / (sizeMax - sizeMin) * 18
@@ -222,12 +230,20 @@ function statisticsScatterOption(rows, params) {
     numericX ? xValues[index] : String(row[xKey] ?? '未知'),
     numericValue(row, yKey),
     colorValues[index],
-    numericValue(row, sizeKey),
+    useSizeEncoding ? numericValue(row, sizeKey) : NaN,
   ]
 
   let series
   let visualMap
-  if (numericColor) {
+  if (!useColorEncoding) {
+    series = [{
+      name: yKey,
+      type: 'scatter',
+      data: rows.map(point),
+      symbolSize,
+      itemStyle: { color: THEME.primary, opacity: 0.78 },
+    }]
+  } else if (numericColor) {
     const validColors = colorValues.filter(Number.isFinite)
     series = [{ name: yKey, type: 'scatter', data: rows.map(point), symbolSize }]
     visualMap = {
@@ -256,8 +272,8 @@ function statisticsScatterOption(rows, params) {
   }
 
   return {
-    title: { text: `煤样参数分布 - ${yKey} vs ${xKey}`, left: 'center', textStyle: { color: THEME.primary } },
-    legend: numericColor ? undefined : { top: 42, type: 'scroll' },
+    title: { text: `${yKey}/${xKey}`, left: 'center', textStyle: { color: THEME.primary } },
+    legend: !useColorEncoding || numericColor ? undefined : { top: 42, type: 'scroll' },
     visualMap,
     xAxis: {
       type: numericX ? 'value' : 'category',
@@ -290,15 +306,15 @@ function statisticsDualAxisOption(rows, params) {
   const xData = prepared.map((item) => numericX ? item.x : item.label)
   return {
     title: { text: `VL和PL值对比 - ${xKey}`, left: 'center', textStyle: { color: THEME.primary } },
-    legend: { top: 42 },
+    legend: { top: 42, icon: 'path://M0,5 C10,0 30,10 40,5', itemWidth: 40, itemHeight: 10 },
     xAxis: { type: numericX ? 'value' : 'category', name: xKey, data: numericX ? undefined : xData },
     yAxis: [
       { type: 'value', name: 'VL值 (cm³/g)', axisLine: { lineStyle: { color: THEME.secondary } } },
       { type: 'value', name: 'PL值 (MPa)', axisLine: { lineStyle: { color: THEME.accent } } },
     ],
     series: [
-      { name: 'VL值', type: 'line', smooth: true, data: numericX ? prepared.map((item) => [item.x, item.vl]) : prepared.map((item) => item.vl), itemStyle: { color: THEME.secondary } },
-      { name: 'PL值', type: 'line', smooth: true, yAxisIndex: 1, data: numericX ? prepared.map((item) => [item.x, item.pl]) : prepared.map((item) => item.pl), itemStyle: { color: THEME.accent } },
+      { name: 'VL值', type: 'line', smooth: true, showSymbol: false, data: numericX ? prepared.map((item) => [item.x, item.vl]) : prepared.map((item) => item.vl), itemStyle: { color: THEME.secondary } },
+      { name: 'PL值', type: 'line', smooth: true, showSymbol: false, yAxisIndex: 1, data: numericX ? prepared.map((item) => [item.x, item.pl]) : prepared.map((item) => item.pl), itemStyle: { color: THEME.accent } },
     ],
   }
 }
@@ -329,7 +345,10 @@ function statisticsGroupedOption(rows) {
 
 export async function calculateStatisticsLocally(params) {
   const rows = filterStatisticsRows(rowsFromFileData(params.fileData || params.file_data), params)
-  if (!rows.length) throw new Error(`筛选后无数据：地区=${params.regionFilter}，挥发分=${params.volatileFilter}`)
+  if (!rows.length) {
+    const selectedRegions = Array.isArray(params.regionFilter) && params.regionFilter.length ? params.regionFilter.join('、') : '全部'
+    throw new Error(`筛选后无数据：地区=${selectedRegions}，挥发分=${params.volatileFilter}`)
+  }
   const chartType = params.chartType || params.chart_type || 'scatter'
   const yKey = params.yAxis || params.y_axis || 'VL值'
   const option = chartType === 'dual_axis'
@@ -357,38 +376,85 @@ export async function calculateDetectionLocally(params) {
   const volume = finiteNumber(params.volume, 0.05)
   const temperature = finiteNumber(params.temperature, 25)
   const compressFactor = finiteNumber(params.compressFactor ?? params.compress_factor, 1)
-  const critPressure = finiteNumber(params.critPressure ?? params.crit_pressure, 0.74)
+  const critPressure = 0.74
   const critContent = finiteNumber(params.critContent ?? params.crit_content, 8)
+  const measuredPressure = finiteNumber(params.measuredPressure ?? params.measured_pressure, NaN)
   if (!pArray.length || !xxArray.length) throw new Error('吸附数据不能为空')
   if (pArray.length !== xxArray.length) throw new Error('压力和吸附量数据长度不一致')
   if (!(volume > 0) || !(compressFactor > 0)) throw new Error('孔隙容积和压缩系数必须大于 0')
+  if (!Number.isFinite(measuredPressure)) throw new Error('实测压力值不能为空')
 
   const temperatureK = temperature + 273.15
   const xyArray = pArray.map((pressure) => round(volume * pressure * 273.2 / (temperatureK * 0.101325 * compressFactor), 4))
   const qArray = xxArray.map((value, index) => round(value + xyArray[index], 4))
-  const pressureIndex = pArray.findIndex((value) => value >= critPressure)
-  const contentIndex = qArray.findIndex((value) => value >= critContent)
-  const isDanger = pressureIndex >= 0 || contentIndex >= 0
+  const pressureContentPairs = pArray
+    .map((pressure, index) => ({ pressure, content: qArray[index] }))
+    .sort((left, right) => left.pressure - right.pressure)
+  const minDataPressure = pressureContentPairs[0].pressure
+  const maxDataPressure = pressureContentPairs[pressureContentPairs.length - 1].pressure
+  if (measuredPressure < minDataPressure || measuredPressure > maxDataPressure) {
+    throw new Error(`实测压力值必须在导入数据的压力范围 ${minDataPressure}-${maxDataPressure} MPa 内`)
+  }
+  let calculatedContent = pressureContentPairs[pressureContentPairs.length - 1].content
+  for (let index = 0; index < pressureContentPairs.length; index += 1) {
+    const current = pressureContentPairs[index]
+    if (measuredPressure === current.pressure) {
+      calculatedContent = current.content
+      break
+    }
+    if (measuredPressure < current.pressure) {
+      const previous = pressureContentPairs[index - 1]
+      const ratio = (measuredPressure - previous.pressure) / (current.pressure - previous.pressure)
+      calculatedContent = previous.content + ratio * (current.content - previous.content)
+      break
+    }
+  }
+  calculatedContent = round(calculatedContent, 4)
+  const pressureDanger = measuredPressure >= critPressure
+  const contentDanger = calculatedContent >= critContent
+  const isDanger = pressureDanger || contentDanger
   const reasons = []
-  if (pressureIndex >= 0) reasons.push(`瓦斯压力超标：当 P ≥ ${pArray[pressureIndex].toFixed(2)} MPa 时，压力 ≥ ${critPressure} MPa`)
-  if (contentIndex >= 0) reasons.push(`总瓦斯含量超标：当 P ≥ ${pArray[contentIndex].toFixed(2)} MPa 时，含量 ≥ ${critContent} m³/t`)
+  if (pressureDanger) reasons.push(`实测压力 ${measuredPressure} MPa 不低于标准值 ${critPressure} MPa`)
+  if (contentDanger) reasons.push(`曲线计算瓦斯含量 ${calculatedContent} m³/t 不低于临界值 ${critContent} m³/t`)
   const dangerReason = isDanger
-    ? `突出危险区：${reasons.join('；')}。除 P < ${critPressure} MPa 且 W < ${critContent} m³/t 以外的情况均判为突出危险区。`
-    : `无突出危险区：瓦斯压力 P < ${critPressure} MPa，瓦斯含量 W < ${critContent} m³/t。`
+    ? `突出危险区：${reasons.join('；')}。`
+    : `无突出危险区：实测压力 ${measuredPressure} MPa < ${critPressure} MPa，曲线计算瓦斯含量 ${calculatedContent} m³/t < ${critContent} m³/t。`
+
+  const adsorptionColor = '#2F9CF4'
+  const freeGasColor = '#F39C12'
+  const totalGasColor = '#FF6068'
+  const measuredPressureColor = '#7B1FA2'
+  const calculatedContentColor = '#00897B'
+  const dashedLegendIcon = 'path://M0,4 L10,4 L10,6 L0,6 Z M15,4 L25,4 L25,6 L15,6 Z M30,4 L40,4 L40,6 L30,6 Z'
+  const solidLegendIcon = 'path://M0,4 L40,4 L40,6 L0,6 Z'
+  const chartMaxPressure = Math.max(3, Math.ceil(Math.max(...pArray, measuredPressure, critPressure) * 10.8) / 10)
+  const chartMaxContent = Math.max(1, Math.ceil(Math.max(...xxArray, ...xyArray, ...qArray, calculatedContent, critContent) * 1.12))
 
   const chartImage = chartToBase64({
     title: { text: '煤层区域突出危险性预测（P-W 双指标）', left: 'center', textStyle: { color: THEME.primary } },
-    legend: { top: 42 },
-    xAxis: { type: 'value', name: '瓦斯压力 P (MPa)', nameLocation: 'middle', nameGap: 42, min: 0, max: 3 },
-    yAxis: { type: 'value', name: '瓦斯含量 (m³/t)', nameLocation: 'middle', nameGap: 58, min: 0 },
+    legend: {
+      top: 42,
+      itemWidth: 40,
+      itemHeight: 10,
+      data: [
+        { name: '吸附瓦斯 Xx', icon: dashedLegendIcon, itemStyle: { color: adsorptionColor } },
+        { name: '游离瓦斯 Xy', icon: dashedLegendIcon, itemStyle: { color: freeGasColor } },
+        { name: '总瓦斯 Q', icon: solidLegendIcon, itemStyle: { color: totalGasColor } },
+        { name: '实测压力值', icon: solidLegendIcon, itemStyle: { color: measuredPressureColor } },
+        { name: '曲线计算瓦斯含量', icon: solidLegendIcon, itemStyle: { color: calculatedContentColor } },
+      ],
+    },
+    xAxis: { type: 'value', name: '瓦斯压力 P (MPa)', nameLocation: 'middle', nameGap: 42, min: 0, max: chartMaxPressure },
+    yAxis: { type: 'value', name: '瓦斯含量 (m³/t)', nameLocation: 'middle', nameGap: 58, min: 0, max: chartMaxContent },
     series: [
-      { name: '吸附瓦斯 Xx', type: 'line', data: pArray.map((pressure, index) => [pressure, xxArray[index]]), lineStyle: { type: 'dashed', color: THEME.secondary, width: 2 }, showSymbol: false },
-      { name: '游离瓦斯 Xy', type: 'line', data: pArray.map((pressure, index) => [pressure, xyArray[index]]), lineStyle: { type: 'dashed', color: THEME.warning, width: 2 }, showSymbol: false },
+      { name: '吸附瓦斯 Xx', type: 'line', data: pArray.map((pressure, index) => [pressure, xxArray[index]]), itemStyle: { color: adsorptionColor }, lineStyle: { type: 'dashed', color: adsorptionColor, width: 2 }, showSymbol: false },
+      { name: '游离瓦斯 Xy', type: 'line', data: pArray.map((pressure, index) => [pressure, xyArray[index]]), itemStyle: { color: freeGasColor }, lineStyle: { type: 'dashed', color: freeGasColor, width: 2 }, showSymbol: false },
       {
         name: '总瓦斯 Q',
         type: 'line',
         data: pArray.map((pressure, index) => [pressure, qArray[index]]),
-        lineStyle: { color: THEME.accent, width: 3 },
+        itemStyle: { color: totalGasColor },
+        lineStyle: { color: totalGasColor, width: 3 },
         showSymbol: false,
         markArea: {
           silent: true,
@@ -402,10 +468,44 @@ export async function calculateDetectionLocally(params) {
         markLine: {
           symbol: 'none',
           data: [
-            { name: '含量临界值', yAxis: critContent, lineStyle: { color: '#e53935', type: 'dashed' }, label: { formatter: `含量临界值 ${critContent}` } },
-            { name: '压力临界值', xAxis: critPressure, lineStyle: { color: THEME.warning, type: 'dotted' }, label: { formatter: `压力临界值 ${critPressure}` } },
+            { name: '含量临界值', yAxis: critContent, lineStyle: { color: '#e53935', type: 'dashed' }, label: { position: 'insideEndTop', formatter: `瓦斯含量临界值：${critContent} m³/t` } },
+            { name: '标准值 0.74 MPa', xAxis: critPressure, lineStyle: { color: THEME.warning, type: 'dashed' }, label: { position: 'insideEndTop', formatter: '压力标准值：0.74 MPa' } },
           ],
         },
+      },
+      {
+        name: '实测压力值',
+        type: 'line',
+        data: [],
+        showSymbol: false,
+        lineStyle: { color: measuredPressureColor, width: 2 },
+        markLine: {
+          silent: true,
+          symbol: 'none',
+          lineStyle: { color: measuredPressureColor, type: 'solid', width: 2 },
+          data: [{
+            xAxis: measuredPressure,
+            label: { position: 'insideStartTop', color: measuredPressureColor, fontWeight: 'bold', formatter: `实测压力值：${measuredPressure} MPa` },
+          }],
+        },
+        z: 9,
+      },
+      {
+        name: '曲线计算瓦斯含量',
+        type: 'line',
+        data: [],
+        showSymbol: false,
+        lineStyle: { color: calculatedContentColor, width: 2 },
+        markLine: {
+          silent: true,
+          symbol: 'none',
+          lineStyle: { color: calculatedContentColor, type: 'solid', width: 2 },
+          data: [{
+            yAxis: calculatedContent,
+            label: { position: 'insideStartBottom', color: calculatedContentColor, fontWeight: 'bold', formatter: `曲线计算瓦斯含量：${calculatedContent} m³/t` },
+          }],
+        },
+        z: 9,
       },
     ],
   })
@@ -421,6 +521,8 @@ export async function calculateDetectionLocally(params) {
       danger_reason: dangerReason,
       crit_pressure: critPressure,
       crit_content: critContent,
+      measured_pressure: measuredPressure,
+      calculated_content: calculatedContent,
       chart_image_base64: chartImage,
     },
   }

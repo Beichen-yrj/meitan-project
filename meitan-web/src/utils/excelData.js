@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx'
 
-const ANALYSIS_REQUIRED_COLUMNS = ['煤型及编号', '挥发分', '温度', '含水率', 'Vl值', 'Pl值']
+const ANALYSIS_REQUIRED_COLUMNS = ['挥发分', '温度', '含水率', 'Vl值', 'Pl值']
+const ANALYSIS_SAMPLE_COLUMNS = ['煤样编号', '煤型及编号']
 const STATISTICS_FALLBACK_COLUMNS = [
   '检索地区',
   '煤矿',
@@ -45,12 +46,18 @@ function uniqueValues(values) {
   return [...new Set(values.filter((value) => value !== null && value !== undefined && value !== ''))]
 }
 
+function normalizeCoalSampleName(value) {
+  return cleanCell(value).replace(/\s*及\s*/g, '')
+}
+
 export function parseAnalysisWorkbook(arrayBuffer) {
   const rows = readFirstSheet(arrayBuffer)
   if (rows.length < 2) throw new Error('参数文件中没有可用数据')
 
   const headers = rows[0].map(cleanCell)
+  const sampleColumn = ANALYSIS_SAMPLE_COLUMNS.find((column) => headers.includes(column))
   const missingColumns = ANALYSIS_REQUIRED_COLUMNS.filter((column) => !headers.includes(column))
+  if (!sampleColumn) missingColumns.unshift('煤样编号')
   if (missingColumns.length) {
     throw new Error(`参数文件缺少必要列：${missingColumns.join('、')}`)
   }
@@ -58,9 +65,10 @@ export function parseAnalysisWorkbook(arrayBuffer) {
   const indexes = Object.fromEntries(
     ANALYSIS_REQUIRED_COLUMNS.map((column) => [column, headers.indexOf(column)])
   )
+  indexes['煤样编号'] = headers.indexOf(sampleColumn)
 
   const records = rows.slice(1).filter(hasValue).map((row) => ({
-    coalType: cleanCell(row[indexes['煤型及编号']]),
+    coalType: normalizeCoalSampleName(row[indexes['煤样编号']]),
     volatile: Number(row[indexes['挥发分']]),
     temperature: Number(row[indexes['温度']]),
     waterContent: Number(row[indexes['含水率']]),
@@ -68,7 +76,7 @@ export function parseAnalysisWorkbook(arrayBuffer) {
     pl: Number(row[indexes['Pl值']]),
   })).filter((record) => record.coalType)
 
-  if (!records.length) throw new Error('参数文件中没有有效的煤型数据')
+  if (!records.length) throw new Error('参数文件中没有有效的煤样数据')
   return records
 }
 
@@ -97,7 +105,7 @@ export function parseStatisticsWorkbook(arrayBuffer) {
     dataRows = rows.slice(1)
   }
 
-  const missingColumns = ['检索地区', '挥发分'].filter((column) => !headers.includes(column))
+  const missingColumns = ['检索地区', '挥发分', '水分', 'VL值', 'PL值'].filter((column) => !headers.includes(column))
   if (missingColumns.length) {
     throw new Error(`地区数据文件缺少必要列：${missingColumns.join('、')}`)
   }

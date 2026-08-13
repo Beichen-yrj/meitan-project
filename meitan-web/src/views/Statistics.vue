@@ -6,19 +6,24 @@
       <aside class="draft-scroll-column">
         <section class="draft-card">
           <div class="draft-card__body">
-            <el-upload
-              style="width:100%"
-              :auto-upload="false"
-              :show-file-list="false"
-              accept=".xlsx,.xls,.csv"
-              :on-change="handleFileChange"
-            >
-              <el-button type="primary" size="large" style="width:100%">
-                <el-icon><FolderOpened /></el-icon>
-                加载数据文件
+            <div class="draft-file-actions">
+              <el-upload
+                :auto-upload="false"
+                :show-file-list="false"
+                accept=".xlsx,.xls,.csv"
+                :on-change="handleFileChange"
+              >
+                <el-button type="primary" size="large">
+                  <el-icon><FolderOpened /></el-icon>
+                  加载数据文件
+                </el-button>
+              </el-upload>
+              <el-button tag="a" :href="statisticsTemplateUrl" download="煤层瓦斯吸附参数统计样板.xlsx" size="large" plain>
+                <el-icon><Download /></el-icon>
+                样板文件
               </el-button>
-            </el-upload>
-            <div class="draft-file-name">当前文件：{{ currentFile || '正在加载内置地区数据...' }}</div>
+            </div>
+            <div class="draft-file-name">当前文件：{{ currentFile || '请加载数据文件' }}</div>
           </div>
         </section>
 
@@ -33,14 +38,18 @@
                   <el-option label="分组图" value="grouped" />
                 </el-select>
               </el-form-item>
-              <el-form-item label="地区筛选：">
-                <el-select v-model="params.regionFilter" filterable>
-                  <el-option label="全部地区" value="全部" />
-                  <el-option v-for="region in filteredRegionOptions" :key="region" :label="region" :value="region" />
+              <el-form-item label="地区比较：">
+                <el-select
+                  v-model="params.regionFilter"
+                  multiple
+                  collapse-tags
+                  collapse-tags-tooltip
+                  filterable
+                  clearable
+                  placeholder="不选择则显示全部地区"
+                >
+                  <el-option v-for="region in regionOptions" :key="region" :label="region" :value="region" />
                 </el-select>
-              </el-form-item>
-              <el-form-item label="检索地区：">
-                <el-input v-model="regionSearch" clearable placeholder="输入关键词筛选地区" />
               </el-form-item>
               <el-form-item label="挥发分：">
                 <el-select v-model="params.volatileFilter" filterable>
@@ -49,22 +58,24 @@
                 </el-select>
               </el-form-item>
               <el-form-item label="X轴：">
-                <el-select v-model="params.xAxis" filterable>
-                  <el-option v-for="column in allColumns" :key="column" :label="column" :value="column" />
+                <el-select v-model="params.xAxis">
+                  <el-option v-for="column in xAxisOptions" :key="column" :label="column" :value="column" />
                 </el-select>
               </el-form-item>
               <el-form-item label="Y轴：">
-                <el-select v-model="params.yAxis" filterable>
-                  <el-option v-for="column in numericColumns" :key="column" :label="column" :value="column" />
+                <el-select v-model="params.yAxis">
+                  <el-option v-for="column in yAxisOptions" :key="column" :label="column" :value="column" />
                 </el-select>
               </el-form-item>
-              <el-form-item label="颜色：">
+              <el-form-item v-if="params.chartType === 'scatter'" label="颜色：">
                 <el-select v-model="params.colorBy" filterable>
+                  <el-option label="无（默认颜色）" value="无" />
                   <el-option v-for="column in allColumns" :key="column" :label="column" :value="column" />
                 </el-select>
               </el-form-item>
-              <el-form-item label="大小：">
+              <el-form-item v-if="params.chartType === 'scatter'" label="大小：">
                 <el-select v-model="params.sizeBy" filterable>
+                  <el-option label="无（默认大小）" value="无" />
                   <el-option v-for="column in numericColumns" :key="column" :label="column" :value="column" />
                 </el-select>
               </el-form-item>
@@ -135,7 +146,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { reactive, ref } from 'vue'
 import * as XLSX from 'xlsx'
 import { calcStatistics } from '@/api'
 import DraftChartPlaceholder from '@/components/DraftChartPlaceholder.vue'
@@ -152,32 +163,24 @@ const chartImage = ref('')
 const summary = ref('')
 const fileData = ref(null)
 const currentFile = ref('')
-const statusText = ref('就绪 - 正在加载内置地区数据')
+const statusText = ref('就绪 - 请加载数据文件')
 const chartPointCount = ref(0)
 const regionOptions = ref([])
 const volatileOptions = ref([])
 const allColumns = ref([])
 const numericColumns = ref([])
-const regionSearch = ref('')
+const statisticsTemplateUrl = `/data/${encodeURIComponent('地区数据yyy(1).xlsx')}`
+const xAxisOptions = ['挥发分', '水分']
+const yAxisOptions = ['VL值', 'PL值']
 
 const params = reactive({
   chartType: 'scatter',
   xAxis: '挥发分',
   yAxis: 'VL值',
-  colorBy: '检索地区',
-  sizeBy: '挥发分',
-  regionFilter: '全部',
+  colorBy: '无',
+  sizeBy: '无',
+  regionFilter: [],
   volatileFilter: '全部',
-})
-
-const filteredRegionOptions = computed(() => {
-  const keyword = regionSearch.value.trim().toLocaleLowerCase('zh-CN')
-  if (!keyword) return regionOptions.value
-  return regionOptions.value.filter((region) => region.toLocaleLowerCase('zh-CN').includes(keyword))
-})
-
-watch(filteredRegionOptions, (options) => {
-  if (params.regionFilter !== '全部' && !options.includes(params.regionFilter)) params.regionFilter = '全部'
 })
 
 function chooseAvailable(currentValue, preferredValue, options) {
@@ -193,12 +196,12 @@ function applyStatisticsData(parsed, filename, showMessage = true) {
   volatileOptions.value = parsed.volatileValues
   allColumns.value = parsed.headers.filter(Boolean)
   numericColumns.value = parsed.numericColumns
-  params.regionFilter = '全部'
+  params.regionFilter = []
   params.volatileFilter = '全部'
-  params.xAxis = chooseAvailable(params.xAxis, '挥发分', allColumns.value)
-  params.yAxis = chooseAvailable(params.yAxis, 'VL值', numericColumns.value)
-  params.colorBy = chooseAvailable(params.colorBy, '检索地区', allColumns.value)
-  params.sizeBy = chooseAvailable(params.sizeBy, '挥发分', numericColumns.value)
+  params.xAxis = chooseAvailable(params.xAxis, '挥发分', xAxisOptions)
+  params.yAxis = chooseAvailable(params.yAxis, 'VL值', yAxisOptions)
+  params.colorBy = chooseAvailable(params.colorBy, '无', ['无', ...allColumns.value])
+  params.sizeBy = chooseAvailable(params.sizeBy, '无', ['无', ...numericColumns.value])
   chartPointCount.value = 0
   statusText.value = `已加载：${filename}（${parsed.fileData.length - 1} 条记录）`
   if (showMessage) ElMessage.success(`地区数据加载成功，共 ${parsed.fileData.length - 1} 条记录`)
@@ -216,25 +219,14 @@ function handleFileChange(file) {
   if (file.raw) loadStatisticsFile(file.raw)
 }
 
-async function loadBuiltInStatistics() {
-  try {
-    const filename = '地区数据yyy(1).xlsx'
-    const response = await fetch(`/data/${encodeURIComponent(filename)}`)
-    if (!response.ok) throw new Error('内置地区数据文件读取失败')
-    applyStatisticsData(parseStatisticsWorkbook(await response.arrayBuffer()), filename, false)
-  } catch (error) {
-    statusText.value = '内置地区数据加载失败，请手动加载数据文件'
-    ElMessage.warning(error.message || '内置地区数据加载失败')
-  }
-}
-
 function countFilteredRows() {
   if (!fileData.value?.length) return 0
   const headers = fileData.value[0]
   const regionIndex = headers.indexOf('检索地区')
   const volatileIndex = headers.indexOf('挥发分')
   return fileData.value.slice(1).filter((row) => {
-    const regionMatches = params.regionFilter === '全部' || String(row[regionIndex]) === params.regionFilter
+    const selectedRegions = Array.isArray(params.regionFilter) ? params.regionFilter : params.regionFilter === '全部' ? [] : [params.regionFilter]
+    const regionMatches = selectedRegions.length === 0 || selectedRegions.includes(String(row[regionIndex]))
     const volatileMatches = params.volatileFilter === '全部' || Number(row[volatileIndex]) === Number(params.volatileFilter)
     return regionMatches && volatileMatches
   }).length
@@ -254,7 +246,7 @@ async function handleAnalyze() {
     chartPointCount.value = countFilteredRows()
     saveCalculationRecord({
       moduleType: 'statistics',
-      sourceName: currentFile.value || '内置地区数据',
+      sourceName: currentFile.value || '地区数据',
       params: { ...params },
       result: res.data,
       chartImage: chartImage.value,
@@ -296,5 +288,4 @@ function exportRawData() {
   statusText.value = '原始数据已导出'
 }
 
-onMounted(loadBuiltInStatistics)
 </script>

@@ -8,28 +8,33 @@
 
         <section class="draft-card">
           <div class="draft-card__body">
-            <el-upload
-              style="width:100%"
-              :auto-upload="false"
-              :show-file-list="false"
-              accept=".xlsx,.xls,.csv"
-              :on-change="handleParameterFileChange"
-            >
-              <el-button type="primary" size="large" style="width:100%">
-                <el-icon><FolderOpened /></el-icon>
-                加载参数文件
+            <div class="draft-file-actions">
+              <el-upload
+                :auto-upload="false"
+                :show-file-list="false"
+                accept=".xlsx,.xls,.csv"
+                :on-change="handleParameterFileChange"
+              >
+                <el-button type="primary" size="large">
+                  <el-icon><FolderOpened /></el-icon>
+                  加载参数文件
+                </el-button>
+              </el-upload>
+              <el-button tag="a" href="/data/data(3).xlsx" download="瓦斯吸附量分析样板.xlsx" size="large" plain>
+                <el-icon><Download /></el-icon>
+                样板文件
               </el-button>
-            </el-upload>
-            <div class="draft-file-name">当前文件：{{ currentFile || '正在加载内置参数文件...' }}</div>
+            </div>
+            <div class="draft-file-name">当前文件：{{ currentFile || '请加载参数文件' }}</div>
           </div>
         </section>
 
         <section class="draft-card">
-          <h3 class="draft-card__title">煤型参数</h3>
+          <h3 class="draft-card__title">基础参数</h3>
           <div class="draft-card__body">
             <el-form label-width="125px" label-position="left">
-              <el-form-item label="煤型及编号：">
-                <el-select v-model="params.coalType" filterable @change="handleCoalTypeChange">
+              <el-form-item label="煤样编号：">
+                <el-select v-model="params.coalType" filterable :disabled="!analysisRecords.length" placeholder="请先加载参数文件" @change="handleCoalTypeChange">
                   <el-option v-for="coalType in coalTypeOptions" :key="coalType" :label="coalType" :value="coalType" />
                 </el-select>
               </el-form-item>
@@ -58,9 +63,6 @@
           <h3 class="draft-card__title">计算参数</h3>
           <div class="draft-card__body">
             <el-form label-width="135px" label-position="left">
-              <el-form-item label="参考温度 (°C)：">
-                <el-input-number v-model="params.referenceTemp" :controls="false" :min="0" />
-              </el-form-item>
               <el-form-item label="最小压力 (MPa)：">
                 <el-input-number v-model="params.pMin" :controls="false" :min="0" :step="0.5" />
               </el-form-item>
@@ -176,7 +178,7 @@
             <span>最大吸附量：{{ resultData.stats?.max_vm }}</span>
             <span>最小吸附量：{{ resultData.stats?.min_vm }}</span>
             <span>平均吸附量：{{ resultData.stats?.avg_vm }}</span>
-            <span>煤型：{{ resultData.coal_type }}</span>
+            <span>煤样编号：{{ resultData.coal_type }}</span>
           </div>
           <div v-else class="draft-muted-text">暂无统计数据</div>
         </div>
@@ -207,7 +209,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import * as XLSX from 'xlsx'
 import { calcAnalysis } from '@/api'
 import DraftChartPlaceholder from '@/components/DraftChartPlaceholder.vue'
@@ -223,7 +225,7 @@ const loading = ref(false)
 const chartImage = ref('')
 const resultData = ref(null)
 const currentFile = ref('')
-const statusText = ref('就绪 - 正在加载内置参数文件')
+const statusText = ref('就绪 - 请加载参数文件')
 const analysisRecords = ref([])
 const coalTypeOptions = ref([])
 const volatileOptions = ref([])
@@ -237,7 +239,6 @@ const params = reactive({
   waterContent: 0,
   vl: 0,
   pl: 0,
-  referenceTemp: 25,
   pMin: 0,
   pMax: 16,
   pStep: 0.1,
@@ -283,7 +284,7 @@ function applyParameterRecords(records, filename, showMessage = true) {
   params.coalType = coalTypeOptions.value.includes(params.coalType) ? params.coalType : coalTypeOptions.value[0]
   currentFile.value = filename
   handleCoalTypeChange()
-  statusText.value = `已加载：${filename}（可选择煤型及编号、挥发分）`
+  statusText.value = `已加载：${filename}（可选择煤样编号、挥发分）`
   if (showMessage) ElMessage.success(`参数文件加载成功，共 ${records.length} 条数据`)
 }
 
@@ -299,20 +300,9 @@ function handleParameterFileChange(file) {
   if (file.raw) loadParameterFile(file.raw)
 }
 
-async function loadBuiltInParameters() {
-  try {
-    const response = await fetch('/data/data(3).xlsx')
-    if (!response.ok) throw new Error('内置参数文件读取失败')
-    applyParameterRecords(parseAnalysisWorkbook(await response.arrayBuffer()), 'data(3).xlsx', false)
-  } catch (error) {
-    statusText.value = '内置参数文件加载失败，请手动加载参数文件'
-    ElMessage.warning(error.message || '内置参数文件加载失败')
-  }
-}
-
 async function handleCalculate() {
   if (!params.coalType || params.volatile === undefined) {
-    ElMessage.warning('请先选择煤型及编号和挥发分')
+    ElMessage.warning('请先加载参数文件，并选择煤样编号和挥发分')
     return
   }
   loading.value = true
@@ -323,7 +313,7 @@ async function handleCalculate() {
     chartImage.value = res.data.chart_image_base64 || ''
     saveCalculationRecord({
       moduleType: 'analysis',
-      sourceName: currentFile.value || '内置参数文件',
+      sourceName: currentFile.value || '参数文件',
       params: { ...params },
       result: res.data,
       chartImage: chartImage.value,
@@ -353,7 +343,6 @@ function clearPlot() {
 }
 
 function resetParams() {
-  params.referenceTemp = 25
   params.pMin = 0
   params.pMax = 16
   params.pStep = 0.1
@@ -416,13 +405,12 @@ function exportData() {
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(resultRows), '计算结果')
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([
     ['参数', '值'],
-    ['煤型及编号', params.coalType],
+    ['煤样编号', params.coalType],
     ['挥发分(%)', params.volatile],
     ['温度(°C)', params.temperature],
     ['含水率(%)', params.waterContent],
     ['Vl值(cm³/g)', params.vl],
     ['Pl值(MPa)', params.pl],
-    ['参考温度(°C)', params.referenceTemp],
   ]), '参数信息')
   comparisonCurves.value.forEach((curve, index) => {
     const rows = curve.p_array.map((pressure, pointIndex) => ({
@@ -435,5 +423,4 @@ function exportData() {
   statusText.value = '计算数据已导出'
 }
 
-onMounted(loadBuiltInParameters)
 </script>
