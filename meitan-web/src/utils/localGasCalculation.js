@@ -228,6 +228,18 @@ function numericValue(row, key) {
   return Number.isFinite(value) ? value : NaN
 }
 
+const STATISTICS_AXIS_UNITS = {
+  挥发分: '%',
+  水分: '%',
+  VL值: 'cm³/g',
+  PL值: 'MPa',
+}
+
+export function statisticsAxisLabel(key) {
+  const unit = STATISTICS_AXIS_UNITS[key]
+  return unit ? `${key} (${unit})` : key
+}
+
 function categoryValue(value) {
   const text = String(value ?? '').trim()
   return text || '未知'
@@ -325,14 +337,14 @@ function statisticsScatterOption(rows, params) {
     visualMap,
     xAxis: {
       type: numericX ? 'value' : 'category',
-      name: xKey,
+      name: statisticsAxisLabel(xKey),
       nameLocation: 'middle',
       nameGap: 42,
       splitLine: { show: true, lineStyle: { type: 'dashed', color: '#d8e8f8' } },
     },
     yAxis: {
       type: 'value',
-      name: yKey,
+      name: statisticsAxisLabel(yKey),
       nameLocation: 'middle',
       nameGap: 58,
       splitLine: { lineStyle: { type: 'dashed', color: '#d8e8f8' } },
@@ -355,7 +367,7 @@ function statisticsDualAxisOption(rows, params) {
   return {
     title: { text: `VL和PL值对比 - ${xKey}`, left: 'center', textStyle: { color: THEME.primary } },
     legend: { top: 42, icon: 'path://M0,5 C10,0 30,10 40,5', itemWidth: 40, itemHeight: 10 },
-    xAxis: { type: numericX ? 'value' : 'category', name: xKey, data: numericX ? undefined : xData },
+    xAxis: { type: numericX ? 'value' : 'category', name: statisticsAxisLabel(xKey), nameLocation: 'middle', nameGap: 42, data: numericX ? undefined : xData },
     yAxis: [
       { type: 'value', name: 'VL值 (cm³/g)', axisLine: { lineStyle: { color: THEME.secondary } } },
       { type: 'value', name: 'PL值 (MPa)', axisLine: { lineStyle: { color: THEME.accent } } },
@@ -380,8 +392,8 @@ function statisticsGroupedOption(rows) {
   return {
     title: { text: '按地区分组的VL和PL值对比', left: 'center', textStyle: { color: THEME.primary } },
     legend: { top: 42 },
-    xAxis: { type: 'category', data: regions, axisLabel: { rotate: 35 } },
-    yAxis: { type: 'value', name: '参数均值', splitLine: { lineStyle: { type: 'dashed', color: '#d8e8f8' } } },
+    xAxis: { type: 'category', name: '检索地区', nameLocation: 'middle', nameGap: 56, data: regions, axisLabel: { rotate: 35 } },
+    yAxis: { type: 'value', name: '参数均值（VL: cm³/g；PL: MPa）', nameLocation: 'middle', nameGap: 58, splitLine: { lineStyle: { type: 'dashed', color: '#d8e8f8' } } },
     dataZoom: regions.length > 10 ? [{ type: 'inside' }, { type: 'slider', bottom: 12 }] : undefined,
     grid: { left: 70, right: 40, top: 90, bottom: regions.length > 10 ? 112 : 82 },
     series: [
@@ -410,7 +422,7 @@ export async function calculateStatisticsLocally(params) {
     message: 'success',
     data: {
       chart_image_base64: chartToBase64(option),
-      stats_summary: `数据点: ${rows.length} | ${yKey}均值: ${mean(rows.map((row) => numericValue(row, yKey))).toFixed(2)}`,
+      stats_summary: `数据点: ${rows.length} | ${statisticsAxisLabel(yKey)}均值: ${mean(rows.map((row) => numericValue(row, yKey))).toFixed(2)}`,
       region_list: regions,
       countries: regions.length,
     },

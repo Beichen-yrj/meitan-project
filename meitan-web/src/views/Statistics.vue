@@ -59,12 +59,12 @@
               </el-form-item>
               <el-form-item label="X轴：">
                 <el-select v-model="params.xAxis">
-                  <el-option v-for="column in xAxisOptions" :key="column" :label="column" :value="column" />
+                  <el-option v-for="column in xAxisOptions" :key="column" :label="statisticsAxisLabel(column)" :value="column" />
                 </el-select>
               </el-form-item>
               <el-form-item label="Y轴：">
                 <el-select v-model="params.yAxis">
-                  <el-option v-for="column in yAxisOptions" :key="column" :label="column" :value="column" />
+                  <el-option v-for="column in yAxisOptions" :key="column" :label="statisticsAxisLabel(column)" :value="column" />
                 </el-select>
               </el-form-item>
               <el-form-item v-if="params.chartType === 'scatter'" label="颜色：">
@@ -129,8 +129,8 @@
           <DraftChartPlaceholder
             v-else
             title="煤样参数分布图"
-            x-label="X轴参数"
-            y-label="Y轴参数"
+            :x-label="statisticsAxisLabel(params.xAxis)"
+            :y-label="statisticsAxisLabel(params.yAxis)"
             hint="请选择参数后点击生成图表按钮"
           />
         </div>
@@ -156,6 +156,7 @@ import { parseStatisticsWorkbook } from '@/utils/excelData'
 import { downloadBase64Png, timestampForFilename } from '@/utils/download'
 import { ElMessage } from 'element-plus'
 import { saveCalculationRecord } from '@/utils/calculationHistory'
+import { statisticsAxisLabel } from '@/utils/localGasCalculation'
 import '@/assets/styles/workbench.css'
 
 const loading = ref(false)
