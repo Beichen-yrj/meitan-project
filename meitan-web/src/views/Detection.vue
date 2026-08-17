@@ -70,12 +70,51 @@
           <h3 class="draft-card__title">评估参考与结果</h3>
           <div class="draft-card__body">
             <img class="prediction-reference-image" src="/images/区域预测临界值图1.jpg" alt="图1 区域预测临界值" />
-            <div
-              v-if="result"
-              class="draft-result-message"
-              :class="result.is_danger ? 'is-danger' : 'is-safe'"
-            >
-              {{ result.danger_reason }}
+            <div v-if="riskEvaluation" class="risk-evaluation">
+              <div class="risk-evaluation__heading">
+                <span>双指标判定结果</span>
+                <el-tag :type="result.is_danger ? 'danger' : 'success'" effect="dark">
+                  {{ result.is_danger ? '突出危险区' : '无突出危险区' }}
+                </el-tag>
+              </div>
+
+              <div class="risk-evaluation__quadrant" :class="result.is_danger ? 'is-danger' : 'is-safe'">
+                <span>象限判定</span>
+                <strong>{{ riskEvaluation.quadrant_label }}</strong>
+              </div>
+
+              <div class="risk-metric">
+                <div class="risk-metric__heading">
+                  <strong>瓦斯压力 P</strong>
+                  <el-tag :type="riskEvaluation.pressure.is_compliant ? 'success' : 'danger'" size="small">
+                    {{ riskEvaluation.pressure.is_compliant ? '符合范围' : '不符合' }}
+                  </el-tag>
+                </div>
+                <div class="risk-metric__values">
+                  <span>实测 {{ riskEvaluation.pressure.value }} MPa</span>
+                  <span>临界值 {{ riskEvaluation.pressure.threshold }} MPa</span>
+                </div>
+                <p>{{ riskEvaluation.pressure.detail }}</p>
+              </div>
+
+              <div class="risk-metric">
+                <div class="risk-metric__heading">
+                  <strong>瓦斯含量 W</strong>
+                  <el-tag :type="riskEvaluation.content.is_compliant ? 'success' : 'danger'" size="small">
+                    {{ riskEvaluation.content.is_compliant ? '符合范围' : '不符合' }}
+                  </el-tag>
+                </div>
+                <div class="risk-metric__values">
+                  <span>计算值 {{ riskEvaluation.content.value }} m³/t</span>
+                  <span>临界值 {{ riskEvaluation.content.threshold }} m³/t</span>
+                </div>
+                <p>{{ riskEvaluation.content.detail }}</p>
+              </div>
+
+              <div class="risk-evaluation__conclusion" :class="result.is_danger ? 'is-danger' : 'is-safe'">
+                <el-icon><component :is="result.is_danger ? 'WarningFilled' : 'CircleCheckFilled'" /></el-icon>
+                <strong>{{ riskEvaluation.conclusion }}</strong>
+              </div>
             </div>
           </div>
         </section>
@@ -164,6 +203,7 @@ watch(critContentPreset, (value) => {
 })
 
 const chartPointCount = computed(() => result.value?.p_array?.length || 0)
+const riskEvaluation = computed(() => result.value?.risk_evaluation || null)
 const measuredPressureMin = computed(() => adsorptionData.value ? Math.min(...adsorptionData.value.pArray) : 0)
 const measuredPressureMax = computed(() => adsorptionData.value ? Math.max(...adsorptionData.value.pArray) : 10)
 const calculatedContentDisplay = computed(() => (
@@ -281,7 +321,11 @@ function exportResults() {
     ['压力标准值(MPa)', 0.74],
     ['曲线计算瓦斯含量(m³/t)', result.value.calculated_content],
     ['瓦斯含量临界值(m³/t)', params.critContent],
+    ['压力指标判定', riskEvaluation.value?.pressure.detail || '-'],
+    ['瓦斯含量指标判定', riskEvaluation.value?.content.detail || '-'],
+    ['四象限判定', riskEvaluation.value?.quadrant_label || '-'],
     ['预测判定', result.value.is_danger ? '突出危险区' : '无突出危险区'],
+    ['最终结论', riskEvaluation.value?.conclusion || result.value.danger_reason],
     ['判定依据', result.value.danger_reason],
   ]), '判定信息')
   XLSX.writeFile(workbook, `区域突出危险性预测_${timestampForFilename()}.xlsx`)
@@ -296,5 +340,92 @@ function exportResults() {
   height: auto;
   margin-bottom: 12px;
   border: 1px solid #d8e8f4;
+}
+
+.risk-evaluation {
+  border-top: 3px solid var(--primary);
+}
+
+.risk-evaluation__heading,
+.risk-metric__heading,
+.risk-evaluation__quadrant,
+.risk-metric__values,
+.risk-evaluation__conclusion {
+  display: flex;
+  align-items: center;
+}
+
+.risk-evaluation__heading {
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0 10px;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.risk-evaluation__quadrant {
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-left: 4px solid currentColor;
+  background: #f7fafc;
+  font-size: 13px;
+}
+
+.risk-evaluation__quadrant strong {
+  text-align: right;
+}
+
+.risk-metric {
+  padding: 12px 0;
+  border-bottom: 1px solid #d8e8f4;
+}
+
+.risk-metric__heading {
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.risk-metric__values {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 8px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.risk-metric p {
+  margin: 6px 0 0;
+  color: #334155;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.risk-evaluation__conclusion {
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 11px 12px;
+  border: 1px solid currentColor;
+  background: #fff;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.risk-evaluation__conclusion .el-icon {
+  flex: 0 0 auto;
+  margin-top: 3px;
+}
+
+.is-danger {
+  color: #c62828;
+}
+
+.is-safe {
+  color: #218739;
 }
 </style>

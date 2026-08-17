@@ -28,6 +28,54 @@ function round(value, digits = 4) {
   return Math.round((value + Number.EPSILON) * scale) / scale
 }
 
+export function buildOutburstRiskEvaluation({ measuredPressure, calculatedContent, critPressure = 0.74, critContent = 8 }) {
+  const pressureDanger = measuredPressure >= critPressure
+  const contentDanger = calculatedContent >= critContent
+  const quadrantNumber = pressureDanger ? (contentDanger ? 1 : 2) : (contentDanger ? 3 : 4)
+  const quadrantLabels = {
+    1: '第一象限（双高危险区）',
+    2: '第二象限（高压低含量）',
+    3: '第三象限（低压高含量）',
+    4: '第四象限（双低安全区）',
+  }
+  const isDanger = pressureDanger || contentDanger
+  const pressureRelation = pressureDanger ? '≥' : '<'
+  const contentRelation = contentDanger ? '≥' : '<'
+  const pressureDetail = pressureDanger
+    ? `${measuredPressure} MPa ${pressureRelation} ${critPressure} MPa，达到或超过压力临界值`
+    : `${measuredPressure} MPa ${pressureRelation} ${critPressure} MPa，处于压力安全范围`
+  const contentDetail = contentDanger
+    ? `${calculatedContent} m³/t ${contentRelation} ${critContent} m³/t，达到或超过含量临界值`
+    : `${calculatedContent} m³/t ${contentRelation} ${critContent} m³/t，处于含量安全范围`
+  const conclusion = isDanger
+    ? '最终结论：至少一项指标达到或超过临界值，判定为突出危险区。'
+    : '最终结论：两项指标均低于临界值，判定为无突出危险区。'
+
+  return {
+    is_danger: isDanger,
+    quadrant_number: quadrantNumber,
+    quadrant_label: quadrantLabels[quadrantNumber],
+    pressure: {
+      value: measuredPressure,
+      threshold: critPressure,
+      relation: pressureRelation,
+      is_compliant: !pressureDanger,
+      status: pressureDanger ? '不符合' : '符合',
+      detail: pressureDetail,
+    },
+    content: {
+      value: calculatedContent,
+      threshold: critContent,
+      relation: contentRelation,
+      is_compliant: !contentDanger,
+      status: contentDanger ? '不符合' : '符合',
+      detail: contentDetail,
+    },
+    conclusion,
+    summary: `压力指标${pressureDanger ? '不符合' : '符合'}：${pressureDetail}；含量指标${contentDanger ? '不符合' : '符合'}：${contentDetail}。对应${quadrantLabels[quadrantNumber]}。${conclusion}`,
+  }
+}
+
 function mean(values) {
   const valid = values.filter(Number.isFinite)
   return valid.length ? valid.reduce((sum, value) => sum + value, 0) / valid.length : 0
@@ -410,15 +458,9 @@ export async function calculateDetectionLocally(params) {
     }
   }
   calculatedContent = round(calculatedContent, 4)
-  const pressureDanger = measuredPressure >= critPressure
-  const contentDanger = calculatedContent >= critContent
-  const isDanger = pressureDanger || contentDanger
-  const reasons = []
-  if (pressureDanger) reasons.push(`实测压力 ${measuredPressure} MPa 不低于标准值 ${critPressure} MPa`)
-  if (contentDanger) reasons.push(`曲线计算瓦斯含量 ${calculatedContent} m³/t 不低于临界值 ${critContent} m³/t`)
-  const dangerReason = isDanger
-    ? `突出危险区：${reasons.join('；')}。`
-    : `无突出危险区：实测压力 ${measuredPressure} MPa < ${critPressure} MPa，曲线计算瓦斯含量 ${calculatedContent} m³/t < ${critContent} m³/t。`
+  const riskEvaluation = buildOutburstRiskEvaluation({ measuredPressure, calculatedContent, critPressure, critContent })
+  const isDanger = riskEvaluation.is_danger
+  const dangerReason = riskEvaluation.summary
 
   const adsorptionColor = '#2F9CF4'
   const freeGasColor = '#F39C12'
@@ -442,6 +484,7 @@ export async function calculateDetectionLocally(params) {
         { name: '总瓦斯 Q', icon: solidLegendIcon, itemStyle: { color: totalGasColor } },
         { name: '实测压力值', icon: solidLegendIcon, itemStyle: { color: measuredPressureColor } },
         { name: '曲线计算瓦斯含量', icon: solidLegendIcon, itemStyle: { color: calculatedContentColor } },
+        { name: '实测评价点', icon: 'circle', itemStyle: { color: '#C62828' } },
       ],
     },
     xAxis: { type: 'value', name: '瓦斯压力 P (MPa)', nameLocation: 'middle', nameGap: 42, min: 0, max: chartMaxPressure },
@@ -507,6 +550,21 @@ export async function calculateDetectionLocally(params) {
         },
         z: 9,
       },
+      {
+        name: '实测评价点',
+        type: 'scatter',
+        data: [[measuredPressure, calculatedContent]],
+        symbolSize: 16,
+        itemStyle: { color: isDanger ? '#C62828' : '#218739', borderColor: '#fff', borderWidth: 2 },
+        label: {
+          show: true,
+          position: 'top',
+          color: isDanger ? '#C62828' : '#218739',
+          fontWeight: 'bold',
+          formatter: riskEvaluation.quadrant_label,
+        },
+        z: 12,
+      },
     ],
   })
 
@@ -523,6 +581,7 @@ export async function calculateDetectionLocally(params) {
       crit_content: critContent,
       measured_pressure: measuredPressure,
       calculated_content: calculatedContent,
+      risk_evaluation: riskEvaluation,
       chart_image_base64: chartImage,
     },
   }

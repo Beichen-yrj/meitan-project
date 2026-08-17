@@ -5,8 +5,8 @@
     <!-- 首页轮播图 -->
     <section class="home-carousel-shell">
       <el-carousel class="home-carousel" :interval="4000" arrow="always" indicator-position="outside">
-        <el-carousel-item v-for="(image, index) in carouselImages" :key="image">
-          <img :src="image" :alt="`煤矿瓦斯图示${index + 1}`" class="home-carousel-image" />
+        <el-carousel-item v-for="image in carouselImages" :key="image.src">
+          <img :src="image.src" :alt="image.alt" class="home-carousel-image" />
         </el-carousel-item>
       </el-carousel>
     </section>
@@ -50,15 +50,18 @@ import { ref, onMounted } from 'vue'
 import { getNews } from '@/api'
 import { applyNewsUrls, DEFAULT_NEWS } from '@/utils/news'
 import HomeTypewriterTitle from '@/components/HomeTypewriterTitle.vue'
-import image1 from '@/assets/images/1.jpg'
-import image2 from '@/assets/images/2.jpg'
-import image3 from '@/assets/images/3.jpg'
-import image4 from '@/assets/images/4.jpg'
-import image5 from '@/assets/images/5.jpg'
-import image6 from '@/assets/images/6.jpg'
+import openPitImage from '@/assets/images/carousel-open-pit.jpg'
+import mineTunnelImage from '@/assets/images/carousel-mine-tunnel.jpg'
+import undergroundMineImage from '@/assets/images/carousel-underground-mine.jpg'
+import coalExcavationImage from '@/assets/images/carousel-coal-excavation.jpg'
 import homeBackground from '@/assets/images/7.jpg'
 
-const carouselImages = [image1, image2, image3, image4, image5, image6]
+const carouselImages = [
+  { src: openPitImage, alt: '露天煤矿全景' },
+  { src: mineTunnelImage, alt: '煤矿井下巷道' },
+  { src: undergroundMineImage, alt: '地下煤矿运输巷道' },
+  { src: coalExcavationImage, alt: '露天煤矿采掘作业' },
+]
 
 const navCards = [
   { title: '瓦斯吸附量计算与分析', desc: 'Langmuir吸附模型计算与多曲线对比分析', path: '/analysis', icon: 'TrendCharts', color: '#1A73E8' },

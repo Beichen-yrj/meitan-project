@@ -13,23 +13,24 @@
       <template #header>
         <span style="font-size:18px;font-weight:bold;color:var(--primary)">相关图示</span>
       </template>
-      <el-row :gutter="12">
+      <el-row :gutter="18" class="related-image-grid">
         <el-col
           v-for="(image, index) in imageList"
           :key="image"
-          :span="8"
-          style="margin-bottom:12px"
+          :xs="24"
+          :sm="12"
+          class="related-image-grid__item"
         >
           <el-image
             :src="image"
             fit="cover"
-            style="width:100%;height:200px;border-radius:8px;cursor:pointer"
+            class="related-image"
             :preview-src-list="imageList"
             :initial-index="index"
             preview-teleported
           >
             <template #error>
-              <div style="height:200px;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--text-secondary)">
+              <div class="related-image__error">
                 图片加载失败
               </div>
             </template>
@@ -41,14 +42,12 @@
 </template>
 
 <script setup>
-import image1 from '@/assets/images/1.jpg'
-import image2 from '@/assets/images/2.jpg'
-import image3 from '@/assets/images/3.jpg'
-import image4 from '@/assets/images/4.jpg'
-import image5 from '@/assets/images/5.jpg'
-import image6 from '@/assets/images/6.jpg'
+import openPitImage from '@/assets/images/carousel-open-pit.jpg'
+import mineTunnelImage from '@/assets/images/carousel-mine-tunnel.jpg'
+import undergroundMineImage from '@/assets/images/carousel-underground-mine.jpg'
+import coalExcavationImage from '@/assets/images/carousel-coal-excavation.jpg'
 
-const imageList = [image1, image2, image3, image4, image5, image6]
+const imageList = [openPitImage, mineTunnelImage, undergroundMineImage, coalExcavationImage]
 
 const introText = `煤层瓦斯（又称煤层气、矿井瓦斯）是赋存于煤层及其围岩中的以甲烷（CH₄）为主的混合气体，是在煤化作用过程中生成的天然气体资源。
 
@@ -58,3 +57,35 @@ const introText = `煤层瓦斯（又称煤层气、矿井瓦斯）是赋存于�
 
 目前我国煤矿瓦斯防治主要采用"先抽后采、监测监控、以风定产"的方针，通过本煤层抽采、邻近层抽采、采空区抽采等综合技术手段，有效降低瓦斯涌出量，保障矿井安全生产。`
 </script>
+
+<style scoped>
+.related-image-grid__item {
+  margin-bottom: 18px;
+}
+
+.related-image {
+  display: block;
+  width: 100%;
+  height: 280px;
+  border-radius: 8px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.related-image__error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 280px;
+  color: var(--text-secondary);
+  background: var(--bg);
+}
+
+@media (max-width: 767px) {
+  .related-image,
+  .related-image__error {
+    height: 220px;
+  }
+}
+</style>
