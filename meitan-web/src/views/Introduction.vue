@@ -18,7 +18,7 @@
           v-for="(image, index) in imageList"
           :key="image"
           :xs="24"
-          :sm="12"
+          :sm="8"
           class="related-image-grid__item"
         >
           <el-image
@@ -42,12 +42,11 @@
 </template>
 
 <script setup>
-import openPitImage from '@/assets/images/carousel-open-pit.jpg'
-import mineTunnelImage from '@/assets/images/carousel-mine-tunnel.jpg'
-import undergroundMineImage from '@/assets/images/carousel-underground-mine.jpg'
-import coalExcavationImage from '@/assets/images/carousel-coal-excavation.jpg'
+import mineWorkingFaceImage from '@/assets/images/mine-working-face.jpg'
+import mineHydraulicSupportImage from '@/assets/images/mine-hydraulic-support.jpg'
+import mineConveyorImage from '@/assets/images/mine-conveyor.jpg'
 
-const imageList = [openPitImage, mineTunnelImage, undergroundMineImage, coalExcavationImage]
+const imageList = [mineWorkingFaceImage, mineHydraulicSupportImage, mineConveyorImage]
 
 const introText = `煤层瓦斯（又称煤层气、矿井瓦斯）是赋存于煤层及其围岩中的以甲烷（CH₄）为主的混合气体，是在煤化作用过程中生成的天然气体资源。
 

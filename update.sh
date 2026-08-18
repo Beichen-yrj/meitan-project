@@ -9,6 +9,8 @@ set -e
 PROJECT_ROOT="/opt/meitan"
 JAR_DIR="/opt/meitan-server"
 WEB_DIR="/var/www/meitan"
+WEB_REVISION_FILE="$WEB_DIR/.meitan-web-revision"
+NODE_HEAP_MB="${MEITAN_NODE_HEAP_MB:-768}"
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -54,10 +56,33 @@ echo -e "${YELLOW}[4/5]${NC} 构建前端..."
 cd "$PROJECT_ROOT/meitan-web"
 
 if command -v npm &>/dev/null; then
-    npm install --silent
-    npm run build
-    cp -r dist/* "$WEB_DIR/"
-    log "前端构建完成 -> $WEB_DIR"
+    FRONTEND_REVISION=$(git -C "$PROJECT_ROOT" rev-parse HEAD:meitan-web 2>/dev/null || true)
+    DEPLOYED_REVISION=$(cat "$WEB_REVISION_FILE" 2>/dev/null || true)
+
+    if [[ -n "$FRONTEND_REVISION" && "$FRONTEND_REVISION" == "$DEPLOYED_REVISION" ]]; then
+        log "前端源码未变化，跳过依赖检查和构建"
+    else
+        LOCK_HASH=$(sha256sum package-lock.json | awk '{print $1}')
+        LOCK_HASH_FILE="node_modules/.meitan-package-lock.sha256"
+        INSTALLED_LOCK_HASH=$(cat "$LOCK_HASH_FILE" 2>/dev/null || true)
+
+        if [[ "$LOCK_HASH" == "$INSTALLED_LOCK_HASH" ]] || \
+           [[ -z "$INSTALLED_LOCK_HASH" && -f node_modules/.package-lock.json && ! package-lock.json -nt node_modules/.package-lock.json ]]; then
+            log "前端依赖未变化，跳过 npm install"
+        else
+            echo "  -> package-lock.json 已变化，更新前端依赖..."
+            npm install --prefer-offline --no-audit --no-fund
+        fi
+        mkdir -p node_modules
+        printf '%s\n' "$LOCK_HASH" > "$LOCK_HASH_FILE"
+
+        echo "  -> 执行 Vite 构建（Node 堆内存上限 ${NODE_HEAP_MB} MB）..."
+        NODE_OPTIONS="--max-old-space-size=${NODE_HEAP_MB}" npm run build
+        mkdir -p "$WEB_DIR"
+        cp -r dist/* "$WEB_DIR/"
+        printf '%s\n' "$FRONTEND_REVISION" > "$WEB_REVISION_FILE"
+        log "前端构建完成 -> $WEB_DIR"
+    fi
 else
     warn "未安装 Node.js，跳过前端构建（Nginx 使用已有文件）"
 fi

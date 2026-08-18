@@ -31,13 +31,6 @@ function round(value, digits = 4) {
 export function buildOutburstRiskEvaluation({ measuredPressure, calculatedContent, critPressure = 0.74, critContent = 8 }) {
   const pressureDanger = measuredPressure >= critPressure
   const contentDanger = calculatedContent >= critContent
-  const quadrantNumber = pressureDanger ? (contentDanger ? 1 : 2) : (contentDanger ? 3 : 4)
-  const quadrantLabels = {
-    1: '第一象限（双高危险区）',
-    2: '第二象限（高压低含量）',
-    3: '第三象限（低压高含量）',
-    4: '第四象限（双低安全区）',
-  }
   const isDanger = pressureDanger || contentDanger
   const pressureRelation = pressureDanger ? '≥' : '<'
   const contentRelation = contentDanger ? '≥' : '<'
@@ -47,14 +40,10 @@ export function buildOutburstRiskEvaluation({ measuredPressure, calculatedConten
   const contentDetail = contentDanger
     ? `${calculatedContent} m³/t ${contentRelation} ${critContent} m³/t，达到或超过含量临界值`
     : `${calculatedContent} m³/t ${contentRelation} ${critContent} m³/t，处于含量安全范围`
-  const conclusion = isDanger
-    ? '最终结论：至少一项指标达到或超过临界值，判定为突出危险区。'
-    : '最终结论：两项指标均低于临界值，判定为无突出危险区。'
+  const conclusion = `经计算分析：实测压力值为 ${measuredPressure} MPa，${pressureDanger ? '达到或超过' : '未超过'}压力标准值 ${critPressure} MPa；瓦斯含量计算值为 ${calculatedContent} m³/t，${contentDanger ? '达到或超过' : '未超过'}瓦斯含量临界值 ${critContent} m³/t，判定为${isDanger ? '突出危险区域' : '无突出危险区域'}。`
 
   return {
     is_danger: isDanger,
-    quadrant_number: quadrantNumber,
-    quadrant_label: quadrantLabels[quadrantNumber],
     pressure: {
       value: measuredPressure,
       threshold: critPressure,
@@ -72,7 +61,7 @@ export function buildOutburstRiskEvaluation({ measuredPressure, calculatedConten
       detail: contentDetail,
     },
     conclusion,
-    summary: `压力指标${pressureDanger ? '不符合' : '符合'}：${pressureDetail}；含量指标${contentDanger ? '不符合' : '符合'}：${contentDetail}。对应${quadrantLabels[quadrantNumber]}。${conclusion}`,
+    summary: `压力指标${pressureDanger ? '不符合' : '符合'}：${pressureDetail}；含量指标${contentDanger ? '不符合' : '符合'}：${contentDetail}。${conclusion}`,
   }
 }
 
@@ -495,7 +484,7 @@ export async function calculateDetectionLocally(params) {
         { name: '游离瓦斯 Xy', icon: dashedLegendIcon, itemStyle: { color: freeGasColor } },
         { name: '总瓦斯 Q', icon: solidLegendIcon, itemStyle: { color: totalGasColor } },
         { name: '实测压力值', icon: solidLegendIcon, itemStyle: { color: measuredPressureColor } },
-        { name: '曲线计算瓦斯含量', icon: solidLegendIcon, itemStyle: { color: calculatedContentColor } },
+        { name: '瓦斯含量计算值 (m³/t)', icon: solidLegendIcon, itemStyle: { color: calculatedContentColor } },
         { name: '实测评价点', icon: 'circle', itemStyle: { color: '#C62828' } },
       ],
     },
@@ -546,7 +535,7 @@ export async function calculateDetectionLocally(params) {
         z: 9,
       },
       {
-        name: '曲线计算瓦斯含量',
+        name: '瓦斯含量计算值 (m³/t)',
         type: 'line',
         data: [],
         showSymbol: false,
@@ -557,7 +546,7 @@ export async function calculateDetectionLocally(params) {
           lineStyle: { color: calculatedContentColor, type: 'solid', width: 2 },
           data: [{
             yAxis: calculatedContent,
-            label: { position: 'insideStartBottom', color: calculatedContentColor, fontWeight: 'bold', formatter: `曲线计算瓦斯含量：${calculatedContent} m³/t` },
+            label: { position: 'insideStartBottom', color: calculatedContentColor, fontWeight: 'bold', formatter: `瓦斯含量计算值：${calculatedContent} m³/t` },
           }],
         },
         z: 9,
@@ -573,7 +562,7 @@ export async function calculateDetectionLocally(params) {
           position: 'top',
           color: isDanger ? '#C62828' : '#218739',
           fontWeight: 'bold',
-          formatter: riskEvaluation.quadrant_label,
+          formatter: isDanger ? '突出危险区' : '无突出危险区',
         },
         z: 12,
       },

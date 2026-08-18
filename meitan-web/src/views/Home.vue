@@ -50,17 +50,15 @@ import { ref, onMounted } from 'vue'
 import { getNews } from '@/api'
 import { applyNewsUrls, DEFAULT_NEWS } from '@/utils/news'
 import HomeTypewriterTitle from '@/components/HomeTypewriterTitle.vue'
-import openPitImage from '@/assets/images/carousel-open-pit.jpg'
-import mineTunnelImage from '@/assets/images/carousel-mine-tunnel.jpg'
-import undergroundMineImage from '@/assets/images/carousel-underground-mine.jpg'
-import coalExcavationImage from '@/assets/images/carousel-coal-excavation.jpg'
+import mineWorkingFaceImage from '@/assets/images/mine-working-face.jpg'
+import mineHydraulicSupportImage from '@/assets/images/mine-hydraulic-support.jpg'
+import mineConveyorImage from '@/assets/images/mine-conveyor.jpg'
 import homeBackground from '@/assets/images/7.jpg'
 
 const carouselImages = [
-  { src: openPitImage, alt: '露天煤矿全景' },
-  { src: mineTunnelImage, alt: '煤矿井下巷道' },
-  { src: undergroundMineImage, alt: '地下煤矿运输巷道' },
-  { src: coalExcavationImage, alt: '露天煤矿采掘作业' },
+  { src: mineWorkingFaceImage, alt: '煤矿井下采煤工作面' },
+  { src: mineHydraulicSupportImage, alt: '煤矿井下液压支架' },
+  { src: mineConveyorImage, alt: '煤矿井下输送设备' },
 ]
 
 const navCards = [
@@ -113,22 +111,39 @@ onMounted(async () => {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
 }
 .home-carousel-shell :deep(.el-carousel__indicators--outside) {
-  padding: 6px 0 4px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
   background: rgba(255, 255, 255, 0.66);
+}
+.home-carousel-shell :deep(.el-carousel__indicator--horizontal) {
+  padding: 7px 4px 6px;
 }
 .home-carousel-shell :deep(.el-carousel__button) {
   width: 26px;
+  height: 3px;
   background-color: #0d47a1;
 }
 .home-carousel-shell :deep(.el-carousel__arrow) {
   width: 42px;
   height: 42px;
-  color: #0d47a1;
-  background: rgba(255, 255, 255, 0.86);
+  color: #fff;
+  background: rgba(6, 43, 78, 0.48);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.home-carousel-shell :deep(.el-carousel__arrow:hover) {
+  background: rgba(6, 43, 78, 0.68);
+}
+.home-carousel-shell :deep(.el-carousel__arrow--left) {
+  left: 14px;
+}
+.home-carousel-shell :deep(.el-carousel__arrow--right) {
+  right: 14px;
 }
 .home-page :deep(.el-card) {
   --el-card-bg-color: rgba(255, 255, 255, 0.76);

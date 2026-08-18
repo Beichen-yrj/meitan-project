@@ -85,6 +85,12 @@ function notifyHistoryUpdated(accountId = getCurrentAccountId()) {
   }
 }
 
+function compactCalculationResult(result) {
+  if (!result || typeof result !== 'object' || Array.isArray(result)) return result || {}
+  const { chart_image_base64, ...compactResult } = result
+  return compactResult
+}
+
 export function getCalculationHistory() {
   return readHistory()
 }
@@ -111,6 +117,7 @@ export function getLatestCalculation(moduleType) {
 export function saveCalculationRecord(record) {
   const now = new Date()
   const accountId = getCurrentAccountId()
+  const chartImage = record.chartImage || record.result?.chart_image_base64 || ''
   const item = {
     id: `${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
     ownerUserId: accountId,
@@ -120,9 +127,9 @@ export function saveCalculationRecord(record) {
     displayTime: record.displayTime || now.toLocaleString('zh-CN', { hour12: false }),
     sourceName: record.sourceName || '',
     params: record.params || {},
-    result: record.result || {},
+    result: compactCalculationResult(record.result),
     inputData: record.inputData || null,
-    chartImage: record.chartImage || '',
+    chartImage,
     summary: record.summary || '',
   }
 
@@ -131,14 +138,21 @@ export function saveCalculationRecord(record) {
     writeHistory(history, accountId)
     notifyHistoryUpdated(accountId)
   } catch (error) {
-    // 图像数据可能使浏览器存储空间不足；仅压缩当前账号的数据，不影响其他账号。
+    // 仅保留当前计算的图表，避免历史图像占满浏览器存储空间。
     try {
-      const fallback = { ...item, chartImage: '' }
       const compactHistory = readHistory(accountId)
-        .filter((historyItem) => historyItem.id !== fallback.id)
+        .filter((historyItem) => historyItem.id !== item.id)
         .slice(0, 19)
-        .map((historyItem) => ({ ...historyItem, chartImage: '' }))
-      writeHistory([fallback, ...compactHistory], accountId)
+        .map((historyItem) => ({
+          ...historyItem,
+          result: compactCalculationResult(historyItem.result),
+          chartImage: '',
+        }))
+      try {
+        writeHistory([item, ...compactHistory], accountId)
+      } catch {
+        writeHistory([{ ...item, chartImage: '' }, ...compactHistory], accountId)
+      }
       notifyHistoryUpdated(accountId)
     } catch {
       console.warn('计算历史保存失败', error)

@@ -37,8 +37,8 @@
                 <b>风险判定：</b><em :class="latestRecord.result?.is_danger ? 'is-danger' : 'is-safe'">{{ latestRecord.result?.is_danger ? '危险' : '安全' }}</em>
               </span>
             </div>
-            <div v-if="latestRecord.chartImage" class="latest-chart-box">
-              <ClickableChartImage :image="latestRecord.chartImage" :alt="latestRecord.moduleLabel" />
+            <div v-if="latestChartImage" class="latest-chart-box">
+              <ClickableChartImage :image="latestChartImage" :alt="latestRecord.moduleLabel" />
             </div>
           </template>
         </div>
@@ -65,7 +65,7 @@
             <template v-else>
               <span>数据文件：<b>{{ latestByModule.detection.sourceName || '-' }}</b></span>
               <span>实测压力：<b>{{ latestByModule.detection.params?.measuredPressure ?? '-' }} MPa</b></span>
-              <span>曲线计算瓦斯含量：<b>{{ detectionCalculatedContent(latestByModule.detection) }} m³/t</b></span>
+              <span>瓦斯含量计算值：<b>{{ detectionCalculatedContent(latestByModule.detection) }} m³/t</b></span>
               <span>瓦斯含量临界值：<b>{{ latestByModule.detection.params?.critContent ?? '-' }} m³/t</b></span>
               <span>检测结果：<b :class="latestByModule.detection.result?.is_danger ? 'is-danger' : 'is-safe'">{{ latestByModule.detection.result?.is_danger ? '存在突出危险' : '未检测到突出危险' }}</b></span>
             </template>
@@ -112,12 +112,13 @@ const history = ref([])
 let removeHistoryListener = () => {}
 
 const modules = [
+  { type: 'detection', label: '煤层区域突出危险性预测', icon: 'WarningFilled' },
   { type: 'analysis', label: '瓦斯吸附量计算与分析', icon: 'TrendCharts' },
   { type: 'statistics', label: '煤层瓦斯吸附参数统计', icon: 'DataAnalysis' },
-  { type: 'detection', label: '煤层区域突出危险性预测', icon: 'WarningFilled' },
 ]
 
 const latestRecord = computed(() => history.value[0] || null)
+const latestChartImage = computed(() => latestRecord.value?.chartImage || latestRecord.value?.result?.chart_image_base64 || '')
 const latestByModule = reactive({ analysis: null, statistics: null, detection: null })
 const moduleColor = (moduleType) => ({ analysis: 'primary', statistics: 'success', detection: 'warning' }[moduleType] || 'info')
 const shortModuleLabel = (moduleType) => ({ analysis: '吸附分析', statistics: '统计分析', detection: '危险检测' }[moduleType] || moduleType)

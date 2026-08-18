@@ -45,14 +45,14 @@
         <section class="draft-card">
           <h3 class="draft-card__title">区域突出危险性预测临界值</h3>
           <div class="draft-card__body">
-            <el-form label-width="165px" label-position="left">
+            <el-form class="prediction-threshold-form" label-width="172px" label-position="left">
               <el-form-item label="实测压力值 (MPa)：">
                 <el-input-number v-model="params.measuredPressure" :controls="false" :min="measuredPressureMin" :max="measuredPressureMax" :step="0.01" placeholder="请输入实测压力值" />
               </el-form-item>
-              <el-form-item label="曲线计算瓦斯含量：">
+              <el-form-item label="瓦斯含量计算值(m³/t)：">
                 <el-input :model-value="calculatedContentDisplay" readonly />
               </el-form-item>
-              <el-form-item label="瓦斯含量临界值：">
+              <el-form-item label="瓦斯含量临界值(m³/t)：">
                 <el-select v-model="critContentPreset">
                   <el-option label="一般区域 W < 8" :value="8" />
                   <el-option label="构造带区域 W < 6" :value="6" />
@@ -69,6 +69,7 @@
         <section class="draft-card">
           <h3 class="draft-card__title">评估参考与结果</h3>
           <div class="draft-card__body">
+            <p class="prediction-reference-description">根据《防治煤与瓦斯突出细则》要求，对照煤层瓦斯压力、瓦斯含量两项指标，可通过本表判定煤层对应的突出危险区域类别。</p>
             <img class="prediction-reference-image" src="/images/区域预测临界值图1.jpg" alt="图1 区域预测临界值" />
             <div v-if="riskEvaluation" class="risk-evaluation">
               <div class="risk-evaluation__heading">
@@ -76,11 +77,6 @@
                 <el-tag :type="result.is_danger ? 'danger' : 'success'" effect="dark">
                   {{ result.is_danger ? '突出危险区' : '无突出危险区' }}
                 </el-tag>
-              </div>
-
-              <div class="risk-evaluation__quadrant" :class="result.is_danger ? 'is-danger' : 'is-safe'">
-                <span>象限判定</span>
-                <strong>{{ riskEvaluation.quadrant_label }}</strong>
               </div>
 
               <div class="risk-metric">
@@ -139,7 +135,7 @@
       </aside>
 
       <section class="draft-card draft-card--fill">
-        <h3 class="draft-card__title">煤层区域突出危险性预测曲线</h3>
+        <h3 class="draft-card__title">煤层区域突出危险性预测</h3>
         <div class="draft-toolbar">
           <el-button type="success" :disabled="!chartImage" @click="saveChart">
             <el-icon><Download /></el-icon>
@@ -150,11 +146,11 @@
         </div>
         <div class="draft-chart-stage">
           <div v-if="chartImage" class="draft-chart-image-wrap">
-            <ClickableChartImage :image="chartImage" alt="煤层区域突出危险性预测曲线" />
+            <ClickableChartImage :image="chartImage" alt="煤层区域突出危险性预测" />
           </div>
           <DraftChartPlaceholder
             v-else
-            title="煤层区域突出危险性预测曲线"
+            title="煤层区域突出危险性预测"
             x-label="瓦斯压力 P (MPa)"
             y-label="瓦斯含量 (m³/t)"
             hint="请导入吸附数据并设置参数"
@@ -208,7 +204,7 @@ const measuredPressureMin = computed(() => adsorptionData.value ? Math.min(...ad
 const measuredPressureMax = computed(() => adsorptionData.value ? Math.max(...adsorptionData.value.pArray) : 10)
 const calculatedContentDisplay = computed(() => (
   Number.isFinite(result.value?.calculated_content)
-    ? `${result.value.calculated_content} m³/t`
+    ? result.value.calculated_content
     : '计算后自动生成'
 ))
 
@@ -319,11 +315,10 @@ function exportResults() {
     ['压缩系数', params.compressFactor],
     ['实测压力值(MPa)', params.measuredPressure],
     ['压力标准值(MPa)', 0.74],
-    ['曲线计算瓦斯含量(m³/t)', result.value.calculated_content],
+    ['瓦斯含量计算值(m³/t)', result.value.calculated_content],
     ['瓦斯含量临界值(m³/t)', params.critContent],
     ['压力指标判定', riskEvaluation.value?.pressure.detail || '-'],
     ['瓦斯含量指标判定', riskEvaluation.value?.content.detail || '-'],
-    ['四象限判定', riskEvaluation.value?.quadrant_label || '-'],
     ['预测判定', result.value.is_danger ? '突出危险区' : '无突出危险区'],
     ['最终结论', riskEvaluation.value?.conclusion || result.value.danger_reason],
     ['判定依据', result.value.danger_reason],
@@ -334,6 +329,17 @@ function exportResults() {
 </script>
 
 <style scoped>
+.prediction-threshold-form :deep(.el-form-item__label) {
+  white-space: nowrap;
+}
+
+.prediction-reference-description {
+  margin: 0 0 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
 .prediction-reference-image {
   display: block;
   width: 100%;
@@ -348,7 +354,6 @@ function exportResults() {
 
 .risk-evaluation__heading,
 .risk-metric__heading,
-.risk-evaluation__quadrant,
 .risk-metric__values,
 .risk-evaluation__conclusion {
   display: flex;
@@ -362,19 +367,6 @@ function exportResults() {
   color: var(--text-primary);
   font-size: 15px;
   font-weight: 800;
-}
-
-.risk-evaluation__quadrant {
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-  border-left: 4px solid currentColor;
-  background: #f7fafc;
-  font-size: 13px;
-}
-
-.risk-evaluation__quadrant strong {
-  text-align: right;
 }
 
 .risk-metric {

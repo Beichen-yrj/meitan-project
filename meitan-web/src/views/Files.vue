@@ -164,7 +164,7 @@ const parameterLabels = {
   coalType: '煤样编号', volatile: '挥发分 (%)', temperature: '温度 (°C)', waterContent: '含水率 (%)',
   vl: 'Vl值', pl: 'Pl值', pMin: '最小压力 (MPa)', pMax: '最大压力 (MPa)', pStep: '压力步长 (MPa)',
   chartType: '图表类型', xAxis: 'X轴', yAxis: 'Y轴', colorBy: '颜色编码', sizeBy: '大小编码', regionFilter: '地区筛选', volatileFilter: '挥发分筛选',
-  volume: '孔隙容积', compressFactor: '压缩系数', measuredPressure: '实测压力值', measuredContent: '实测瓦斯含量值（旧记录）', calculatedContent: '曲线计算瓦斯含量', critContent: '瓦斯含量临界值',
+  volume: '孔隙容积', compressFactor: '压缩系数', measuredPressure: '实测压力值', measuredContent: '实测瓦斯含量值（旧记录）', calculatedContent: '瓦斯含量计算值 (m³/t)', critContent: '瓦斯含量临界值 (m³/t)',
 }
 
 const detailColumns = computed(() => {
